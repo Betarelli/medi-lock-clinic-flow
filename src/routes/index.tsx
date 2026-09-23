@@ -27,6 +27,7 @@ import {
   Stethoscope,
   Upload,
   UserRound,
+  UsersRound,
   Volume2,
   X,
 } from "lucide-react";
@@ -142,11 +143,13 @@ function AccessibilityBar({
   setFontScale,
   highContrast,
   setHighContrast,
+  onOpenCredits,
 }: {
   fontScale: number;
   setFontScale: (scale: number) => void;
   highContrast: boolean;
   setHighContrast: (enabled: boolean) => void;
+  onOpenCredits: () => void;
 }) {
   return (
     <aside className="border-b border-border bg-foreground px-4 py-2 text-background" aria-label="Barra de acessibilidade">
@@ -185,6 +188,18 @@ function AccessibilityBar({
         >
           <span className="size-4 rounded-full border border-current bg-token" aria-hidden="true" />
           Alto Contraste
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-11 border-background/50 bg-foreground px-3 text-background hover:bg-background hover:text-foreground"
+          onClick={onOpenCredits}
+          aria-label="Abrir informações da equipe e créditos"
+        >
+          <UsersRound className="size-4" aria-hidden="true" />
+          <span className="hidden sm:inline">Equipe &amp; Créditos</span>
+          <span className="sm:hidden">Créditos</span>
         </Button>
       </div>
     </aside>
@@ -374,6 +389,7 @@ function MediLockApp() {
   const [error, setError] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(false);
   const [attention, setAttention] = useState<AttentionState>("pending");
   const [conditionDecisions, setConditionDecisions] = useState<ConditionDecisions>({
     hypertension: "pending",
@@ -433,6 +449,7 @@ function MediLockApp() {
         setFontScale={setFontScale}
         highContrast={highContrast}
         setHighContrast={setHighContrast}
+        onOpenCredits={() => setCreditsOpen(true)}
       />
       {!patientAuthenticated ? (
         <PatientLoginScreen onAccess={() => { setPatientAuthenticated(true); setView("patient"); setNotice(""); }} />
@@ -551,6 +568,34 @@ function MediLockApp() {
       </Dialog>
         </>
       )}
+
+      <Dialog open={creditsOpen} onOpenChange={setCreditsOpen}>
+        <DialogContent className="max-w-lg rounded-lg">
+          <DialogHeader>
+            <div className="mb-2 grid size-11 place-items-center rounded-md bg-secondary text-primary" aria-hidden="true">
+              <UsersRound className="size-5" />
+            </div>
+            <DialogTitle>MediLock • Hack Inova OS 2.0</DialogTitle>
+            <DialogDescription>
+              Ciência da Computação (Noturno) - Universidade Anhembi Morumbi
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border border-border bg-muted p-4">
+            <p className="text-xs font-bold uppercase text-muted-foreground">Integrantes</p>
+            <ul className="mt-3 space-y-3 text-sm">
+              <li><strong>Gustavo Betarelli Leite</strong> <span className="text-muted-foreground">(RA: 12526130738)</span></li>
+              <li><strong>Enrico Rodrigues da Silva</strong> <span className="text-muted-foreground">(RA: 12526175153)</span></li>
+              <li><strong>Leonardo Jorge Nobre de Lima</strong> <span className="text-muted-foreground">(RA: 12526143614)</span></li>
+            </ul>
+          </div>
+          <div className="rounded-md border border-primary/25 bg-secondary px-4 py-3 text-sm font-bold text-secondary-foreground">
+            Desafio 04: Copiloto Clínico | Zero-Trust &amp; LGPD
+          </div>
+          <Button type="button" variant="outline" className="w-full" onClick={() => setCreditsOpen(false)} aria-label="Fechar equipe e créditos">
+            Fechar
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
