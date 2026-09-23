@@ -22,9 +22,9 @@ Nossa equipe trabalhou no **Desafio 04 — Copiloto Clínico Seguro**, com foco 
 
 O **MediLock** é uma plataforma de inteligência pré-consulta que organiza laudos e receitas fragmentados sem expor os dados do paciente fora do momento de atendimento:
 
-1. **Envio Prévio e Cofre Trancado:** O paciente envia PDFs de laudos ou fotos de receitas antigas via WhatsApp ou web[cite: 1, 4]. Os arquivos são processados e armazenados em um cofre digital criptografado, permanecendo inacessíveis para terceiros antes do atendimento.
+1. **Envio Prévio e Cofre Trancado:** O paciente envia PDFs de laudos ou fotos de receitas antigas via WhatsApp ou web. Os arquivos são processados e armazenados em um cofre digital criptografado, permanecendo inacessíveis para terceiros antes do atendimento.
 2. **Aperto de Mão Digital em Sala:** O médico só consegue abrir o histórico quando o paciente está fisicamente no consultório e fornece um **Token numérico efêmero (ex.: `849-201`)** ou apresenta um QR Code.
-3. **Consulta Ágil e Fechamento Seguro:** O profissional acessa uma linha do tempo com alertas rastreáveis[cite: 1, 4]. Ao finalizar o atendimento, o token expira imediatamente, o cofre é trancado e um registro de auditoria é gravado.
+3. **Consulta Ágil e Fechamento Seguro:** O profissional acessa uma linha do tempo com alertas rastreáveis. Ao finalizar o atendimento, o token expira imediatamente, o cofre é trancado e um registro de auditoria é gravado.
 
 ---
 
