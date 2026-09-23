@@ -334,7 +334,7 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
         </div>
         <div className="border-t border-token-foreground/20 bg-token-deep px-5 py-4">
           <Button type="button" variant="ghost" className="h-auto w-full justify-between py-2 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => setQrExpanded((open) => !open)} aria-expanded={qrExpanded}>
-            <span className="flex items-center gap-2"><QrCode /> Ou mostre este QR Code ao médico</span>
+            <span className="flex items-center gap-2"><QrCode /> Ou mostre este QR Code para o médico na sala</span>
             <span className="text-lg" aria-hidden="true">{qrExpanded ? "−" : "+"}</span>
           </Button>
           {qrExpanded && (
@@ -360,7 +360,7 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <Button type="button" size="lg" className="col-span-2 h-12 sm:col-span-1" onClick={onUpload}><Upload /> Enviar exame ou receita</Button>
+          <Button type="button" size="lg" className="col-span-2 min-h-12 whitespace-normal px-4 sm:col-span-1" onClick={onUpload}><Upload /> + Enviar Novo Exame ou Receita</Button>
           <Button type="button" variant="outline" size="lg" className="col-span-2 h-12 sm:col-span-1" onClick={onCamera}><Camera /> Tirar foto</Button>
         </div>
 
