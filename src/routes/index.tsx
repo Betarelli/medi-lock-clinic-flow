@@ -23,13 +23,14 @@ import {
   Plus,
   QrCode,
   ShieldCheck,
+  Square,
   Stethoscope,
   Upload,
   UserRound,
   Volume2,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -95,13 +96,45 @@ const patientDocuments: PatientDocument[] = [
   },
 ];
 
-function speak(text: string) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "pt-BR";
-  utterance.rate = 0.9;
-  window.speechSynthesis.speak(utterance);
+function useSpeechController() {
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const activeUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const stopSpeech = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    activeUtterance.current = null;
+    setSpeakingId(null);
+  }, []);
+
+  const toggleSpeech = useCallback((id: string, text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (speakingId === id) {
+      stopSpeech();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    activeUtterance.current = utterance;
+    utterance.lang = "pt-BR";
+    utterance.rate = 0.9;
+    const resetWhenCurrent = () => {
+      if (activeUtterance.current === utterance) {
+        activeUtterance.current = null;
+        setSpeakingId(null);
+      }
+    };
+    utterance.onend = resetWhenCurrent;
+    utterance.onerror = resetWhenCurrent;
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utterance);
+  }, [speakingId, stopSpeech]);
+
+  useEffect(() => stopSpeech, [stopSpeech]);
+
+  return { speakingId, toggleSpeech, stopSpeech };
 }
 
 function AccessibilityBar({
@@ -351,6 +384,7 @@ function MediLockApp() {
   const fileInput = useRef<HTMLInputElement>(null);
   const patientFileInput = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
+  const { speakingId, toggleSpeech, stopSpeech } = useSpeechController();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -409,7 +443,7 @@ function MediLockApp() {
         setPatientAuthenticated(false);
         setView("patient");
         setNotice("");
-        window.speechSynthesis?.cancel();
+        stopSpeech();
       }} />
       {notice && (
         <div className="border-b border-success/20 bg-success-soft px-4 py-2 text-center text-sm font-medium text-success" role="status">
@@ -422,6 +456,8 @@ function MediLockApp() {
         <PatientView
           onUpload={() => patientFileInput.current?.click()}
           onCamera={() => cameraInput.current?.click()}
+          speakingId={speakingId}
+          toggleSpeech={toggleSpeech}
         />
       ) : unlocked ? (
           <UnlockedDashboard
@@ -434,6 +470,8 @@ function MediLockApp() {
             setSourceOpen={setSourceOpen}
             onUpload={() => fileInput.current?.click()}
             onRevoke={revoke}
+            speakingId={speakingId}
+            toggleSpeech={toggleSpeech}
           />
         ) : (
           <LockedView token={token} error={error} updateToken={updateToken} unlock={unlock} openQr={() => setQrOpen(true)} />
@@ -517,7 +555,12 @@ function MediLockApp() {
   );
 }
 
-function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: () => void }) {
+function PatientView({ onUpload, onCamera, speakingId, toggleSpeech }: {
+  onUpload: () => void;
+  onCamera: () => void;
+  speakingId: string | null;
+  toggleSpeech: (id: string, text: string) => void;
+}) {
   const [copied, setCopied] = useState(false);
   const [qrExpanded, setQrExpanded] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<PatientDocument | null>(null);
@@ -575,12 +618,12 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
            <Button type="button" variant="secondary" size="lg" className="h-12 min-w-44" onClick={copyToken} aria-label="Copiar token 849-201">
             {copied ? <ClipboardCheck /> : <Copy />} {copied ? "Token Copiado" : "Copiar Token"}
           </Button>
-           <Button type="button" variant="secondary" size="lg" className="h-12 min-w-44" onClick={() => speak("Resumo do acesso. Seu token de acesso em sala é 849 201. Ele expira ao término da consulta.")} aria-label="Ouvir resumo do token">
-             <Volume2 /> Ouvir resumo
+            <Button type="button" variant="secondary" size="lg" className="h-12 min-w-44" onClick={() => toggleSpeech("patient-token-summary", "Resumo do acesso. Seu token de acesso em sala é 849 201. Ele expira ao término da consulta.")} aria-label={`${speakingId === "patient-token-summary" ? "Parar" : "Ouvir"} resumo do token`} aria-pressed={speakingId === "patient-token-summary"}>
+              {speakingId === "patient-token-summary" ? <Square /> : <Volume2 />} {speakingId === "patient-token-summary" ? "Parar leitura" : "Ouvir resumo"}
            </Button>
           </div>
-           <Button type="button" variant="ghost" className="mt-3 min-h-11 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => speak("8, 4, 9, 2, 0, 1")} aria-label="Ouvir token 849-201, dígito por dígito">
-             <Volume2 /> Ouvir Token
+           <Button type="button" variant="ghost" className="mt-3 min-h-11 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => toggleSpeech("patient-token-digits", "8, 4, 9, 2, 0, 1")} aria-label={`${speakingId === "patient-token-digits" ? "Parar leitura do" : "Ouvir"} token 849-201, dígito por dígito`} aria-pressed={speakingId === "patient-token-digits"}>
+              {speakingId === "patient-token-digits" ? <Square /> : <Volume2 />} {speakingId === "patient-token-digits" ? "Parar Token" : "Ouvir Token"}
           </Button>
         </div>
         <div className="border-t border-token-foreground/20 bg-token-deep px-5 py-4">
@@ -715,7 +758,7 @@ function LockedView({ token, error, updateToken, unlock, openQr }: {
   );
 }
 
-function UnlockedDashboard({ attention, setAttention, conditionDecisions, setConditionDecision, setSourceOpen, onUpload, onRevoke }: {
+function UnlockedDashboard({ attention, setAttention, conditionDecisions, setConditionDecision, setSourceOpen, onUpload, onRevoke, speakingId, toggleSpeech }: {
   attention: AttentionState;
   setAttention: (state: AttentionState) => void;
   conditionDecisions: ConditionDecisions;
@@ -723,6 +766,8 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
   setSourceOpen: (open: boolean) => void;
   onUpload: () => void;
   onRevoke: () => void;
+  speakingId: string | null;
+  toggleSpeech: (id: string, text: string) => void;
 }) {
   return (
     <section className="medilock-enter mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
@@ -746,6 +791,8 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
             source="[Fonte: Receita_Losartana_Jan2026.pdf - Pág. 1]"
             decision={conditionDecisions.hypertension}
             onDecision={setConditionDecision}
+            speakingId={speakingId}
+            toggleSpeech={toggleSpeech}
           />
           <ChronicConditionCard
             id="diabetes"
@@ -753,6 +800,8 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
             source="[Fonte: Laudo_Glicemia_Out2025.pdf - Pág. 1]"
             decision={conditionDecisions.diabetes}
             onDecision={setConditionDecision}
+            speakingId={speakingId}
+            toggleSpeech={toggleSpeech}
           />
           <ChronicConditionCard
             id="penicillin"
@@ -761,6 +810,8 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
             decision={conditionDecisions.penicillin}
             onDecision={setConditionDecision}
             isAlert
+            speakingId={speakingId}
+            toggleSpeech={toggleSpeech}
           />
         </div>
       </section>
@@ -783,8 +834,8 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
           <Button type="button" variant="link" onClick={() => setSourceOpen(true)} className="mt-4 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-sm font-semibold" aria-label="Abrir fonte Laudo Bioquímica de outubro de 2025, página 1">
             <ExternalLink className="mt-0.5 size-4 shrink-0" /><span>[Fonte: Laudo_Bioquimica_Out2025.pdf - Página 1]</span>
           </Button>
-          <Button type="button" variant="outline" className="mt-4 min-h-11" onClick={() => speak("Ponto de atenção rastreável. Glicemia de jejum elevada, 138 miligramas por decilitro, com tendência de alta. Fonte: Laudo Bioquímica, outubro de 2025, página 1.")} aria-label="Ouvir resumo do ponto de atenção sobre glicemia">
-            <Volume2 /> Ouvir resumo
+          <Button type="button" variant="outline" className="mt-4 min-h-11" onClick={() => toggleSpeech("attention-glucose", "Ponto de atenção rastreável. Glicemia de jejum elevada, 138 miligramas por decilitro, com tendência de alta. Fonte: Laudo Bioquímica, outubro de 2025, página 1.")} aria-label={`${speakingId === "attention-glucose" ? "Parar" : "Ouvir"} resumo do ponto de atenção sobre glicemia`} aria-pressed={speakingId === "attention-glucose"}>
+            {speakingId === "attention-glucose" ? <Square /> : <Volume2 />} {speakingId === "attention-glucose" ? "Parar leitura" : "Ouvir resumo"}
           </Button>
           {attention === "pending" ? (
             <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 sm:flex-row">
@@ -815,12 +866,14 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
   );
 }
 
-function ChronicConditionCard({ id, title, source, decision, onDecision, isAlert = false }: {
+function ChronicConditionCard({ id, title, source, decision, onDecision, speakingId, toggleSpeech, isAlert = false }: {
   id: ConditionId;
   title: string;
   source: string;
   decision: ConditionDecision;
   onDecision: (condition: ConditionId, decision: ConditionDecision) => void;
+  speakingId: string | null;
+  toggleSpeech: (id: string, text: string) => void;
   isAlert?: boolean;
 }) {
   return (
@@ -832,8 +885,8 @@ function ChronicConditionCard({ id, title, source, decision, onDecision, isAlert
         <div className="min-w-0">
           <h3 className={`font-extrabold leading-6 ${isAlert ? "text-destructive" : ""}`}>{title}</h3>
           <p className={`mt-2 text-xs font-semibold leading-5 ${isAlert ? "rounded-md bg-destructive/10 px-2 py-1.5 text-destructive" : "text-primary"}`}>{source}</p>
-          <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 px-2" onClick={() => speak(`${title}. ${source.replaceAll("[", "").replaceAll("]", "")}`)} aria-label={`Ouvir resumo de ${title}`}>
-            <Volume2 /> Ouvir resumo
+          <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 px-2" onClick={() => toggleSpeech(`condition-${id}`, `${title}. ${source.replaceAll("[", "").replaceAll("]", "")}`)} aria-label={`${speakingId === `condition-${id}` ? "Parar" : "Ouvir"} resumo de ${title}`} aria-pressed={speakingId === `condition-${id}`}>
+            {speakingId === `condition-${id}` ? <Square /> : <Volume2 />} {speakingId === `condition-${id}` ? "Parar leitura" : "Ouvir resumo"}
           </Button>
         </div>
       </div>
