@@ -165,7 +165,12 @@
     min-width: 320px;
   }
 
-  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
     outline: 3px solid var(--color-ring) !important;
     outline-offset: 3px !important;
   }
