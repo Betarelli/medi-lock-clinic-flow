@@ -173,6 +173,7 @@
   [tabindex]:focus-visible {
     outline: 3px solid var(--color-ring) !important;
     outline-offset: 3px !important;
+    box-shadow: 0 0 0 3px var(--color-ring) !important;
   }
 }
 
