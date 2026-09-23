@@ -376,16 +376,25 @@ function MediLockApp() {
         <DialogContent className="max-w-xl rounded-lg">
           <DialogHeader>
             <DialogTitle>Laudo_Bioquimica_Out2025.pdf</DialogTitle>
-            <DialogDescription>Página 1 · Resultado laboratorial enviado pelo paciente</DialogDescription>
+            <DialogDescription>Página 1 · Pré-visualização do resultado laboratorial enviado pelo paciente</DialogDescription>
           </DialogHeader>
-          <div className="rounded-md border border-border bg-muted p-5 text-sm leading-7">
-            <p className="font-bold">Glicemia de jejum</p>
-            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3">
-              <span className="text-muted-foreground">Resultado</span><strong>138 mg/dL</strong>
-              <span className="text-muted-foreground">Referência</span><span>70–99 mg/dL</span>
+          <div className="rounded-md border border-border bg-muted p-5 text-sm leading-7" aria-label="Pré-visualização do laudo laboratorial">
+            <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+              <div>
+                <p className="font-extrabold">Bioquímica Clínica</p>
+                <p className="text-xs text-muted-foreground">Paciente: João Silva · Coleta: 18/10/2025</p>
+              </div>
+              <FileText className="size-6 shrink-0 text-primary" aria-hidden="true" />
+            </div>
+            <div className="mt-4 rounded-md border border-warning/45 bg-warning-soft px-4 py-3 text-foreground" role="note">
+              <p className="font-extrabold">Glicemia de Jejum: 138 mg/dL <span className="font-semibold">(Referência: 70 a 99 mg/dL)</span></p>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+              <span className="text-muted-foreground">Método</span><span>Enzimático colorimétrico</span>
               <span className="text-muted-foreground">Resultado anterior</span><span>126 mg/dL</span>
             </div>
           </div>
+          <Button type="button" variant="outline" className="w-full" onClick={() => setSourceOpen(false)} aria-label="Fechar pré-visualização do laudo">Fechar</Button>
         </DialogContent>
       </Dialog>
     </div>
@@ -454,8 +463,8 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
              <Volume2 /> Ouvir resumo
            </Button>
           </div>
-          <Button type="button" variant="ghost" className="mt-3 min-h-11 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => speak("Oito, quatro, nove. Dois, zero, um.")} aria-label="Ouvir dígitos do token 849-201">
-            <Volume2 /> Ouvir dígitos do token
+           <Button type="button" variant="ghost" className="mt-3 min-h-11 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => speak("8, 4, 9, 2, 0, 1")} aria-label="Ouvir token 849-201, dígito por dígito">
+             <Volume2 /> Ouvir Token
           </Button>
         </div>
         <div className="border-t border-token-foreground/20 bg-token-deep px-5 py-4">
@@ -652,7 +661,7 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
           </div>
         </article>
 
-        <article className="rounded-lg border border-warning/35 bg-card p-5 shadow-sm sm:p-6">
+        <article className={`rounded-lg border p-5 shadow-sm transition-all sm:p-6 ${attention === "accepted" ? "border-success/45 bg-success-soft/40" : attention === "ignored" ? "border-border bg-muted opacity-60" : "border-warning/35 bg-card"}`}>
           <div className="flex items-center gap-2 text-warning"><AlertTriangle className="size-5" /><h2 className="text-sm font-bold uppercase">Ponto de atenção rastreável</h2></div>
           <p className="mt-5 text-lg font-bold leading-7">Glicemia de jejum elevada <span className="text-warning">(138 mg/dL)</span> com tendência de alta.</p>
           <Button type="button" variant="link" onClick={() => setSourceOpen(true)} className="mt-4 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-sm font-semibold" aria-label="Abrir fonte Laudo Bioquímica de outubro de 2025, página 1">
@@ -663,12 +672,12 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
           </Button>
           {attention === "pending" ? (
             <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 sm:flex-row">
-              <Button className="min-h-11 flex-1 whitespace-normal" onClick={() => setAttention("accepted")} aria-label="Aceitar ponto de atenção e registrar no prontuário"><Check /> Aceitar / Registrar no Prontuário</Button>
+              <Button className="min-h-11 flex-1 whitespace-normal" onClick={() => setAttention("accepted")} aria-label="Aceitar ponto de atenção e registrar no prontuário"><Check /> Aceitar</Button>
               <Button variant="outline" className="min-h-11 sm:w-28" onClick={() => setAttention("ignored")} aria-label="Ignorar ponto de atenção">Ignorar</Button>
             </div>
           ) : (
-            <div className={`mt-6 flex items-center justify-between gap-3 rounded-md p-4 ${attention === "accepted" ? "bg-success-soft text-success" : "bg-muted text-muted-foreground"}`} role="status">
-              <div className="flex items-center gap-2 text-sm font-bold">{attention === "accepted" ? <CheckCircle2 className="size-5" /> : <X className="size-5" />}{attention === "accepted" ? "Registrado no prontuário" : "Ponto de atenção ignorado"}</div>
+            <div className={`mt-6 flex items-center justify-between gap-3 rounded-md p-4 ${attention === "accepted" ? "border border-success/30 bg-success-soft text-success" : "border border-border bg-card text-muted-foreground"}`} role="status">
+              <div className="flex items-center gap-2 text-sm font-bold">{attention === "accepted" ? <CheckCircle2 className="size-5" /> : <X className="size-5" />}{attention === "accepted" ? "Validado pelo Dr. Carlos Eduardo" : "Descartado pelo profissional"}</div>
                <Button variant="ghost" size="sm" className="min-h-11" onClick={() => setAttention("pending")} aria-label="Desfazer decisão sobre o ponto de atenção">Desfazer</Button>
             </div>
           )}
