@@ -1,68 +1,54 @@
-# MediLock Clinical Hub
+# 🔒 MediLock — Copiloto Clínico com Acesso em Sala por Token
 
-Crie uma aplicação web responsiva para desktop (visão do médico) e mobile (visão do paciente) chamada "MediLock - Copiloto Clínico com Acesso em Sala".
+> **"O histórico médico nas mãos do paciente; insights rastreáveis na tela do doutor."**  
+> Projeto desenvolvido durante o **Hack Inova OS 2.0 (HealthTech)** — Universidade Anhembi Morumbi (Campus Av. Paulista).
 
-A aplicação deve conter:
+🔗 **Protótipo Funcional Online:** [https://medi-lock-clinic-flow.lovable.app/](https://medi-lock-clinic-flow.lovable.app/)
 
-1. Barra Superior:
+---
 
-   - Identificação do médico: "Dr. Carlos Eduardo - CRM/SP 123456".
+## 🏆 O Hackathon e o Desafio
 
-   - Status da Consulta: "Paciente na Recepção" (badge amarelo) ou "Em Consulta" (badge verde).
+O **Hack Inova OS 2.0** desafiou os estudantes a aplicarem Inteligência Artificial prática para transformar a área da saúde. 
 
-2. Estado 1 (Bloqueado - Tela Inicial):
+Nossa equipe trabalhou no **Desafio 04 — Copiloto Clínico Seguro**, com foco em resolver a sobrecarga de informações médicas e garantir a privacidade e segurança dos dados dos pacientes:
+* **Rastreabilidade Documental:** Toda informação clínica consolidada deve apontar exatamente para o documento e página de origem.
+* **Trava Anti-Alucinação:** O sistema descarta e bloqueia automaticamente qualquer sugestão que não possua respaldo em exames e laudos recentes.
+* **Supervisão Humana Obrigatória:** A IA atua apenas como copiloto de suporte; a validação final cabe 100% ao médico, que decide aceitar ou ignorar cada ponto.
 
-   - Card central com ícone de cadeado.
+---
 
-   - Mensagem: "Prontuário Bloqueado por LGPD. Aguardando paciente em sala."
+## 💡 O que é o MediLock?
 
-   - Campo para digitar Token de 6 dígitos (ex: 849-201) e botão "Desbloquear com Token".
+O **MediLock** é uma plataforma de inteligência pré-consulta que organiza laudos e receitas fragmentados sem expor os dados do paciente fora do momento de atendimento:
 
-   - Botão alternativo: "Escanear QR Code do Paciente".
+1. **Envio Prévio e Cofre Trancado:** O paciente envia PDFs de laudos ou fotos de receitas antigas via WhatsApp ou web[cite: 1, 4]. Os arquivos são processados e armazenados em um cofre digital criptografado, permanecendo inacessíveis para terceiros antes do atendimento.
+2. **Aperto de Mão Digital em Sala:** O médico só consegue abrir o histórico quando o paciente está fisicamente no consultório e fornece um **Token numérico efêmero (ex.: `849-201`)** ou apresenta um QR Code.
+3. **Consulta Ágil e Fechamento Seguro:** O profissional acessa uma linha do tempo com alertas rastreáveis[cite: 1, 4]. Ao finalizar o atendimento, o token expira imediatamente, o cofre é trancado e um registro de auditoria é gravado.
 
-3. Estado 2 (Desbloqueado - Ao inserir o token correto "849201" ou clicar em simular):
+---
 
-   - Painel dividido em 3 seções:
+## 📊 Validação Real ($N = 27$)
 
-     A) Resumo do Paciente: João Silva, 48 anos. Histórico de envio de 2 laudos pré-consulta.
+Durante a maratona, aplicamos uma pesquisa com 27 respondentes para validar o problema e a solução:
+* **70,4%** dos pacientes perdem tempo substancial em consultas procurando exames ou repetindo histórico.
+* **66,7%** já enfrentaram apuros por esquecer laudos e receitas em papel.
+* **88,9%** afirmaram intenção de uso do envio antecipado com liberação presencial por código.
+* **51,9%** condicionaram a adesão à garantia explícita de que ninguém verá seus dados fora da consulta, validando o conceito de acesso estritamente presencial via Token.
 
-     B) Ponto de Atenção Rastreável: 
+---
 
-        - Alerta: "Glicemia de jejum elevada (138 mg/dL) com tendência de alta."
+## ⚙️ Tecnologias e Implementação
 
-        - Citação clicável: "[Fonte: Laudo_Bioquimica_Out2025.pdf - Página 1]".
+* **Frontend e Interatividade:** Desenvolvido no [Lovable](https://lovable.app/) com foco em usabilidade, diferenciação cromática entre Modo Médico e Modo Paciente, e acessibilidade nativa (alto contraste, navegação por teclado e síntese de voz para leitura do token e alertas).
+* **Arquitetura de Dados Zero-Trust:** Modelagem de segurança com banco relacional e regras de **Row Level Security (RLS)**, garantindo que registros clínicos só sejam consultados durante sessões ativas e com token válido.
+* **Automação e Ingestão:** Fluxo planejado para captura de anexos via Webhook no WhatsApp, OCR e extração estruturada de evidências clínicas.
 
-        - Botões de ação médica: "Aceitar / Registrar no Prontuário" e "Ignorar".
+---
 
-     C) Sugestão Bloqueada por Falta de Evidência (Guardrail):
+## 👥 Equipe
 
-        - Card em tom cinza/alerta: "Sugestão Descartada: Prescrição de Estatina."
-
-        - Motivo explícito: "Bloqueado: Nenhuma evidência de perfil lipídico recente no histórico enviado."
-
-     D) Botão de Ação Final:
-
-        - "Adicionar Laudo da Consulta" e botão vermelho "Encerrar Consulta & Revogar Acesso".
-
-Design limpo, profissional (estilo clínica moderna com tons azul petróleo e branco), botões interativos que mudam de estado ao clicar.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/5d75181d-9005-4ca2-897f-439e979b41ef).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+Estudantes de **Ciência da Computação (Turno Noturno) — Universidade Anhembi Morumbi**:
+* **Gustavo Betarelli Leite** — RA: 12526130738
+* **Enrico Rodrigues da Silva** — RA: 12526175153
+* **Leonardo Jorge Nobre de Lima** — RA: 12526143614
