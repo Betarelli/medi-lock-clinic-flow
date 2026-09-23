@@ -19,6 +19,7 @@ import {
   HeartPulse,
   History,
   LockKeyhole,
+  LogOut,
   Plus,
   QrCode,
   ShieldCheck,
@@ -195,12 +196,12 @@ function Header({ unlocked }: { unlocked: boolean }) {
   );
 }
 
-function ViewSwitcher({ view, onChange }: { view: AppView; onChange: (view: AppView) => void }) {
+function ViewSwitcher({ view, onChange, onSignOut }: { view: AppView; onChange: (view: AppView) => void; onSignOut: () => void }) {
   return (
     <div className="border-b border-border bg-card px-4 py-3">
-      <div className="mx-auto flex max-w-7xl flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
         <span className="text-xs font-bold text-muted-foreground">Visualização:</span>
-        <div className="grid w-full grid-cols-2 rounded-lg bg-muted p-1 sm:ml-auto sm:w-auto sm:min-w-80" role="group" aria-label="Escolher visualização">
+        <div className="order-3 grid w-full grid-cols-2 rounded-lg bg-muted p-1 sm:order-none sm:w-auto sm:min-w-80" role="group" aria-label="Escolher visualização">
           <Button
             type="button"
             variant={view === "patient" ? "default" : "ghost"}
@@ -222,14 +223,118 @@ function ViewSwitcher({ view, onChange }: { view: AppView; onChange: (view: AppV
             <Stethoscope /> Médico
           </Button>
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="ml-auto min-h-11 text-muted-foreground"
+          onClick={onSignOut}
+          aria-label="Sair e trocar de conta"
+        >
+          <LogOut /> Sair / Trocar de Conta
+        </Button>
       </div>
     </div>
+  );
+}
+
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits ? `(${digits}` : "";
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function formatCpf(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1-$2");
+}
+
+function PatientLoginScreen({ onAccess }: { onAccess: () => void }) {
+  const [phone, setPhone] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (phone.replace(/\D/g, "").length !== 11 || cpf.replace(/\D/g, "").length !== 11) {
+      setLoginError("Confira o celular e o CPF para continuar.");
+      return;
+    }
+    onAccess();
+  };
+
+  return (
+    <main className="medilock-enter mx-auto flex min-h-[calc(100vh-3.75rem)] w-full max-w-7xl items-center justify-center px-4 py-10 sm:px-6">
+      <section className="w-full max-w-md" aria-labelledby="patient-access-title">
+        <div className="text-center">
+          <div className="mx-auto grid size-16 place-items-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-success/15" aria-hidden="true">
+            <ShieldCheck className="size-8" />
+          </div>
+          <p className="mt-5 text-sm font-extrabold text-primary">Acesso do Paciente · MediLock</p>
+          <h1 id="patient-access-title" className="mt-2 text-2xl font-extrabold leading-tight sm:text-3xl">
+            MediLock Saúde - Seu Histórico nas Suas Mãos
+          </h1>
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
+            Acesse seus exames, receitas e autorize suas consultas em tempo real.
+          </p>
+        </div>
+
+        <form onSubmit={submit} className="mt-8 rounded-lg border border-border bg-card p-5 shadow-xl shadow-success/5 sm:p-7" noValidate>
+          <div>
+            <label htmlFor="patient-phone" className="mb-2 block text-sm font-bold">Número de Celular / WhatsApp</label>
+            <Input
+              id="patient-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel-national"
+              value={phone}
+              onChange={(event) => { setPhone(formatPhone(event.target.value)); setLoginError(""); }}
+              placeholder="(11) 99999-9999"
+              maxLength={15}
+              className="h-12"
+              aria-invalid={Boolean(loginError)}
+              aria-describedby={loginError ? "patient-login-error" : undefined}
+              required
+            />
+          </div>
+          <div className="mt-5">
+            <label htmlFor="patient-cpf" className="mb-2 block text-sm font-bold">CPF do Titular</label>
+            <Input
+              id="patient-cpf"
+              inputMode="numeric"
+              autoComplete="off"
+              value={cpf}
+              onChange={(event) => { setCpf(formatCpf(event.target.value)); setLoginError(""); }}
+              placeholder="000.000.000-00"
+              maxLength={14}
+              className="h-12"
+              aria-invalid={Boolean(loginError)}
+              aria-describedby={loginError ? "patient-login-error" : undefined}
+              required
+            />
+          </div>
+          {loginError && <p id="patient-login-error" className="mt-3 text-sm font-semibold text-destructive" role="alert">{loginError}</p>}
+          <Button type="submit" size="lg" className="mt-6 h-12 w-full" aria-label="Entrar no meu cofre de saúde">
+            <LockKeyhole /> Entrar no Meu Cofre de Saúde
+          </Button>
+          <div className="mt-5 flex items-start gap-2 border-t border-border pt-5 text-xs leading-5 text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <p>Ao continuar, você autoriza o armazenamento criptografado dos seus registros médicos conforme a LGPD.</p>
+          </div>
+        </form>
+      </section>
+    </main>
   );
 }
 
 function MediLockApp() {
   const [fontScale, setFontScale] = useState(0);
   const [highContrast, setHighContrast] = useState(false);
+  const [patientAuthenticated, setPatientAuthenticated] = useState(false);
   const [view, setView] = useState<AppView>("doctor");
   const [unlocked, setUnlocked] = useState(false);
   const [token, setToken] = useState("");
@@ -288,15 +393,24 @@ function MediLockApp() {
   };
 
   return (
-    <div className={`min-h-screen bg-background text-foreground ${view === "doctor" ? "profile-doctor" : "profile-patient"} ${fontScale === 1 ? "a11y-font-large" : fontScale === 2 ? "a11y-font-larger" : ""} ${highContrast ? "high-contrast" : ""}`}>
+    <div className={`min-h-screen bg-background text-foreground ${patientAuthenticated && view === "doctor" ? "profile-doctor" : "profile-patient"} ${fontScale === 1 ? "a11y-font-large" : fontScale === 2 ? "a11y-font-larger" : ""} ${highContrast ? "high-contrast" : ""}`}>
       <AccessibilityBar
         fontScale={fontScale}
         setFontScale={setFontScale}
         highContrast={highContrast}
         setHighContrast={setHighContrast}
       />
+      {!patientAuthenticated ? (
+        <PatientLoginScreen onAccess={() => { setPatientAuthenticated(true); setView("patient"); setNotice(""); }} />
+      ) : (
+        <>
       {view === "doctor" && <Header unlocked={unlocked} />}
-      <ViewSwitcher view={view} onChange={setView} />
+      <ViewSwitcher view={view} onChange={setView} onSignOut={() => {
+        setPatientAuthenticated(false);
+        setView("patient");
+        setNotice("");
+        window.speechSynthesis?.cancel();
+      }} />
       {notice && (
         <div className="border-b border-success/20 bg-success-soft px-4 py-2 text-center text-sm font-medium text-success" role="status">
           {notice}
@@ -397,6 +511,8 @@ function MediLockApp() {
           <Button type="button" variant="outline" className="w-full" onClick={() => setSourceOpen(false)} aria-label="Fechar pré-visualização do laudo">Fechar</Button>
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   );
 }
