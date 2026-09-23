@@ -157,15 +157,15 @@ function AccessibilityBar({
   );
 }
 
-function Brand() {
+function Brand({ inverse = false }: { inverse?: boolean }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <div className="grid size-10 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm">
+      <div className={`grid size-10 shrink-0 place-items-center rounded-md shadow-sm ${inverse ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"}`}>
         <HeartPulse className="size-5" aria-hidden="true" />
       </div>
       <div className="min-w-0">
-        <p className="truncate text-lg font-extrabold text-foreground">MediLock</p>
-        <p className="hidden text-xs text-muted-foreground sm:block">Copiloto Clínico com Acesso em Sala</p>
+        <p className={`truncate text-lg font-extrabold ${inverse ? "text-primary-foreground" : "text-foreground"}`}>MediLock</p>
+        <p className={`hidden text-xs sm:block ${inverse ? "text-primary-foreground/75" : "text-muted-foreground"}`}>Copiloto Clínico com Acesso em Sala</p>
       </div>
     </div>
   );
@@ -173,13 +173,13 @@ function Brand() {
 
 function Header({ unlocked }: { unlocked: boolean }) {
   return (
-    <header className="border-b border-border bg-card">
+    <header className="border-b border-primary bg-primary text-primary-foreground">
       <div className="mx-auto grid min-h-20 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:flex sm:justify-between sm:px-6 lg:px-8">
-        <Brand />
+        <Brand inverse />
         <div className="flex min-w-0 items-center gap-3 sm:gap-6">
-          <div className="hidden min-w-0 items-center gap-2 border-r border-border pr-6 md:flex">
-            <Stethoscope className="size-4 shrink-0 text-primary" aria-hidden="true" />
-            <p className="truncate text-sm font-semibold">Dr. Carlos Eduardo <span className="font-normal text-muted-foreground">· CRM/SP 123456</span></p>
+          <div className="hidden min-w-0 items-center gap-2 border-r border-primary-foreground/30 pr-6 md:flex">
+            <Stethoscope className="size-4 shrink-0" aria-hidden="true" />
+            <p className="truncate text-sm font-semibold">Dr. Carlos Eduardo <span className="font-normal text-primary-foreground/75">· CRM/SP 123456</span></p>
           </div>
           <div className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${unlocked ? "bg-success-soft text-success" : "bg-warning-soft text-warning"}`}>
             <span className={`size-2 rounded-full ${unlocked ? "bg-success" : "bg-warning"}`} />
@@ -188,8 +188,8 @@ function Header({ unlocked }: { unlocked: boolean }) {
           </div>
         </div>
       </div>
-      <div className="border-t border-border px-4 py-2 md:hidden">
-        <p className="truncate text-xs font-semibold text-muted-foreground">Dr. Carlos Eduardo · CRM/SP 123456</p>
+      <div className="border-t border-primary-foreground/20 px-4 py-2 md:hidden">
+        <p className="truncate text-xs font-semibold text-primary-foreground/80">Dr. Carlos Eduardo · CRM/SP 123456</p>
       </div>
     </header>
   );
@@ -288,7 +288,7 @@ function MediLockApp() {
   };
 
   return (
-    <div className={`min-h-screen bg-background text-foreground ${fontScale === 1 ? "a11y-font-large" : fontScale === 2 ? "a11y-font-larger" : ""} ${highContrast ? "high-contrast" : ""}`}>
+    <div className={`min-h-screen bg-background text-foreground ${view === "doctor" ? "profile-doctor" : "profile-patient"} ${fontScale === 1 ? "a11y-font-large" : fontScale === 2 ? "a11y-font-larger" : ""} ${highContrast ? "high-contrast" : ""}`}>
       <AccessibilityBar
         fontScale={fontScale}
         setFontScale={setFontScale}
@@ -429,7 +429,7 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
         <div className="mt-4 flex flex-wrap gap-2" aria-label="Condições e alergias cadastradas">
           <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground">Hipertensão Arterial</span>
           <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground">Diabetes Tipo 2</span>
-          <span className="rounded-full border border-warning/40 bg-warning-soft px-3 py-1.5 text-xs font-bold text-foreground">Alergia a Penicilina</span>
+          <span className="rounded-full border border-destructive/35 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive">Alergia a Penicilina</span>
         </div>
         <Button type="button" variant="ghost" className="mt-4 h-auto min-h-11 justify-start px-0 py-1 text-primary hover:bg-transparent hover:text-clinical" onClick={() => setConditionFormOpen((open) => !open)} aria-expanded={conditionFormOpen} aria-label="Informar nova condição ou alergia">
           <Plus className="size-4" /> Informar nova condição ou alergia
@@ -699,14 +699,14 @@ function ChronicConditionCard({ id, title, source, decision, onDecision, isAlert
   isAlert?: boolean;
 }) {
   return (
-    <article className={`rounded-lg border bg-card p-5 shadow-sm ${isAlert ? "border-warning/60" : "border-border"}`}>
+    <article className={`rounded-lg border bg-card p-5 shadow-sm ${isAlert ? "border-destructive/55" : "border-border"}`}>
       <div className="flex items-start gap-3">
-        <div className={`grid size-9 shrink-0 place-items-center rounded-md ${isAlert ? "bg-warning-soft text-destructive" : "bg-success-soft text-success"}`}>
+        <div className={`grid size-9 shrink-0 place-items-center rounded-md ${isAlert ? "bg-destructive/10 text-destructive" : "bg-secondary text-primary"}`}>
           {isAlert ? <AlertTriangle className="size-5" /> : <HeartPulse className="size-5" />}
         </div>
         <div className="min-w-0">
-          <h3 className="font-extrabold leading-6">{title}</h3>
-          <p className={`mt-2 text-xs font-semibold leading-5 ${isAlert ? "rounded-md bg-warning-soft px-2 py-1.5 text-destructive" : "text-primary"}`}>{source}</p>
+          <h3 className={`font-extrabold leading-6 ${isAlert ? "text-destructive" : ""}`}>{title}</h3>
+          <p className={`mt-2 text-xs font-semibold leading-5 ${isAlert ? "rounded-md bg-destructive/10 px-2 py-1.5 text-destructive" : "text-primary"}`}>{source}</p>
           <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 px-2" onClick={() => speak(`${title}. ${source.replaceAll("[", "").replaceAll("]", "")}`)} aria-label={`Ouvir resumo de ${title}`}>
             <Volume2 /> Ouvir resumo
           </Button>
