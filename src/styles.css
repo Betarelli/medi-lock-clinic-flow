@@ -91,13 +91,13 @@
   --border: oklch(0.88 0.018 204);
   --input: oklch(0.84 0.027 203);
   --ring: oklch(0.54 0.09 197);
-  --success: oklch(0.53 0.13 153);
+  --success: oklch(0.5401 0.1423 151.92);
   --success-soft: oklch(0.94 0.045 153);
   --warning: oklch(0.66 0.14 76);
   --warning-soft: oklch(0.96 0.05 83);
   --clinical: oklch(0.36 0.07 203);
-  --token: oklch(0.72 0.2 149);
-  --token-deep: oklch(0.58 0.17 149);
+  --token: oklch(0.5401 0.1423 151.92);
+  --token-deep: oklch(0.445 0.132 146.4);
   --token-foreground: oklch(0.99 0.004 150);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);

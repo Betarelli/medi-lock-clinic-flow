@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  Activity,
   AlertTriangle,
   ArrowRight,
   CalendarDays,
@@ -18,6 +19,7 @@ import {
   HeartPulse,
   History,
   LockKeyhole,
+  Plus,
   QrCode,
   ShieldCheck,
   Stethoscope,
@@ -59,6 +61,9 @@ export const Route = createFileRoute("/")({
 
 type AttentionState = "pending" | "accepted" | "ignored";
 type AppView = "doctor" | "patient";
+type ConditionId = "hypertension" | "diabetes" | "penicillin";
+type ConditionDecision = "pending" | "confirmed" | "discarded";
+type ConditionDecisions = Record<ConditionId, ConditionDecision>;
 
 type PatientDocument = {
   name: string;
@@ -164,6 +169,11 @@ function MediLockApp() {
   const [qrOpen, setQrOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [attention, setAttention] = useState<AttentionState>("pending");
+  const [conditionDecisions, setConditionDecisions] = useState<ConditionDecisions>({
+    hypertension: "pending",
+    diabetes: "pending",
+    penicillin: "pending",
+  });
   const [notice, setNotice] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const patientFileInput = useRef<HTMLInputElement>(null);
@@ -197,6 +207,7 @@ function MediLockApp() {
     setUnlocked(false);
     setToken("");
     setAttention("pending");
+    setConditionDecisions({ hypertension: "pending", diabetes: "pending", penicillin: "pending" });
     setNotice("Consulta encerrada. O acesso ao prontuário foi revogado.");
   };
 
@@ -220,6 +231,10 @@ function MediLockApp() {
           <UnlockedDashboard
             attention={attention}
             setAttention={setAttention}
+            conditionDecisions={conditionDecisions}
+            setConditionDecision={(condition, decision) => {
+              setConditionDecisions((current) => ({ ...current, [condition]: decision }));
+            }}
             setSourceOpen={setSourceOpen}
             onUpload={() => fileInput.current?.click()}
             onRevoke={revoke}
@@ -299,6 +314,7 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
   const [copied, setCopied] = useState(false);
   const [qrExpanded, setQrExpanded] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<PatientDocument | null>(null);
+  const [conditionFormOpen, setConditionFormOpen] = useState(false);
 
   const copyToken = async () => {
     try {
@@ -322,6 +338,26 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
           </p>
         </div>
       </header>
+
+      <section className="mt-6 rounded-lg border border-border bg-card p-5 shadow-sm" aria-labelledby="clinical-profile-title">
+        <div className="flex items-center gap-2 text-primary">
+          <Activity className="size-5" aria-hidden="true" />
+          <h2 id="clinical-profile-title" className="font-extrabold">Meu Perfil Clínico</h2>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Condições e alergias cadastradas">
+          <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground">Hipertensão Arterial</span>
+          <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground">Diabetes Tipo 2</span>
+          <span className="rounded-full border border-warning/40 bg-warning-soft px-3 py-1.5 text-xs font-bold text-foreground">Alergia a Penicilina</span>
+        </div>
+        <Button type="button" variant="ghost" className="mt-4 h-auto justify-start px-0 py-1 text-primary hover:bg-transparent hover:text-clinical" onClick={() => setConditionFormOpen((open) => !open)} aria-expanded={conditionFormOpen}>
+          <Plus className="size-4" /> Informar nova condição ou alergia
+        </Button>
+        {conditionFormOpen && (
+          <div className="mt-3 rounded-md bg-success-soft p-3 text-sm font-medium text-success" role="status">
+            Solicitação aberta. A nova informação será revisada antes de entrar no seu perfil clínico.
+          </div>
+        )}
+      </section>
 
       <article className="mt-7 overflow-hidden rounded-lg bg-token text-token-foreground shadow-lg shadow-success/15">
         <div className="p-6 text-center sm:p-8">
@@ -464,9 +500,11 @@ function LockedView({ token, error, updateToken, unlock, openQr }: {
   );
 }
 
-function UnlockedDashboard({ attention, setAttention, setSourceOpen, onUpload, onRevoke }: {
+function UnlockedDashboard({ attention, setAttention, conditionDecisions, setConditionDecision, setSourceOpen, onUpload, onRevoke }: {
   attention: AttentionState;
   setAttention: (state: AttentionState) => void;
+  conditionDecisions: ConditionDecisions;
+  setConditionDecision: (condition: ConditionId, decision: ConditionDecision) => void;
   setSourceOpen: (open: boolean) => void;
   onUpload: () => void;
   onRevoke: () => void;
@@ -480,6 +518,37 @@ function UnlockedDashboard({ attention, setAttention, setSourceOpen, onUpload, o
         </div>
         <div className="hidden items-center gap-2 text-xs font-medium text-muted-foreground sm:flex"><Clock3 className="size-4" /> Acesso temporário ativo</div>
       </div>
+
+      <section className="mb-5" aria-labelledby="chronic-conditions-title">
+        <div className="mb-4 flex items-center gap-2 text-primary">
+          <Activity className="size-5" aria-hidden="true" />
+          <h2 id="chronic-conditions-title" className="text-sm font-extrabold uppercase">Condições Crônicas Pré-Identificadas</h2>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-3">
+          <ChronicConditionCard
+            id="hypertension"
+            title="Hipertensão Arterial Sistêmica"
+            source="[Fonte: Receita_Losartana_Jan2026.pdf - Pág. 1]"
+            decision={conditionDecisions.hypertension}
+            onDecision={setConditionDecision}
+          />
+          <ChronicConditionCard
+            id="diabetes"
+            title="Diabetes Tipo 2"
+            source="[Fonte: Laudo_Glicemia_Out2025.pdf - Pág. 1]"
+            decision={conditionDecisions.diabetes}
+            onDecision={setConditionDecision}
+          />
+          <ChronicConditionCard
+            id="penicillin"
+            title="Alergia a Penicilina"
+            source="[Fonte: Informado pelo paciente no cadastro via WhatsApp]"
+            decision={conditionDecisions.penicillin}
+            onDecision={setConditionDecision}
+            isAlert
+          />
+        </div>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-[0.85fr_1.4fr]">
         <article className="rounded-lg border border-border bg-card p-5 shadow-sm sm:p-6">
@@ -525,5 +594,42 @@ function UnlockedDashboard({ attention, setAttention, setSourceOpen, onUpload, o
         <Button variant="destructive" size="lg" className="h-12" onClick={onRevoke}>Encerrar Consulta &amp; Revogar Acesso <ArrowRight /></Button>
       </div>
     </section>
+  );
+}
+
+function ChronicConditionCard({ id, title, source, decision, onDecision, isAlert = false }: {
+  id: ConditionId;
+  title: string;
+  source: string;
+  decision: ConditionDecision;
+  onDecision: (condition: ConditionId, decision: ConditionDecision) => void;
+  isAlert?: boolean;
+}) {
+  return (
+    <article className={`rounded-lg border bg-card p-5 shadow-sm ${isAlert ? "border-warning/60" : "border-border"}`}>
+      <div className="flex items-start gap-3">
+        <div className={`grid size-9 shrink-0 place-items-center rounded-md ${isAlert ? "bg-warning-soft text-destructive" : "bg-success-soft text-success"}`}>
+          {isAlert ? <AlertTriangle className="size-5" /> : <HeartPulse className="size-5" />}
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-extrabold leading-6">{title}</h3>
+          <p className={`mt-2 text-xs font-semibold leading-5 ${isAlert ? "rounded-md bg-warning-soft px-2 py-1.5 text-destructive" : "text-primary"}`}>{source}</p>
+        </div>
+      </div>
+      {decision === "pending" ? (
+        <div className="mt-5 grid grid-cols-2 gap-2 border-t border-border pt-4">
+          <Button type="button" size="sm" onClick={() => onDecision(id, "confirmed")}><Check /> Confirmar</Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => onDecision(id, "discarded")}>Descartar</Button>
+        </div>
+      ) : (
+        <div className={`mt-5 flex items-center justify-between gap-2 rounded-md p-3 ${decision === "confirmed" ? "bg-success-soft text-success" : "bg-muted text-muted-foreground"}`} role="status">
+          <span className="flex items-center gap-2 text-xs font-bold">
+            {decision === "confirmed" ? <CheckCircle2 className="size-4" /> : <X className="size-4" />}
+            {decision === "confirmed" ? "Condição confirmada" : "Condição descartada"}
+          </span>
+          <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={() => onDecision(id, "pending")}>Desfazer</Button>
+        </div>
+      )}
+    </article>
   );
 }
