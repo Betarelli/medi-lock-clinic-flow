@@ -2,17 +2,26 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowRight,
+  CalendarDays,
+  Camera,
   Check,
   CheckCircle2,
+  ClipboardCheck,
+  Copy,
   Clock3,
+  Eye,
   ExternalLink,
   FileCheck2,
+  FileImage,
   FilePlus2,
+  FileText,
   HeartPulse,
+  History,
   LockKeyhole,
   QrCode,
   ShieldCheck,
   Stethoscope,
+  Upload,
   UserRound,
   X,
 } from "lucide-react";
@@ -49,6 +58,35 @@ export const Route = createFileRoute("/")({
 });
 
 type AttentionState = "pending" | "accepted" | "ignored";
+type AppView = "doctor" | "patient";
+
+type PatientDocument = {
+  name: string;
+  date: string;
+  type: "PDF" | "Foto";
+  detail: string;
+};
+
+const patientDocuments: PatientDocument[] = [
+  {
+    name: "Laudo Bioquímica - Glicemia e Perfil Lipídico",
+    date: "Out/2025",
+    type: "PDF",
+    detail: "Resultados de glicemia de jejum e perfil lipídico completo.",
+  },
+  {
+    name: "Receita Médica - Metformina 500mg",
+    date: "Jan/2026",
+    type: "Foto",
+    detail: "Receita médica fotografada e armazenada no seu cofre pessoal.",
+  },
+  {
+    name: "Ressonância Magnética Coluna Lombar",
+    date: "Ago/2024",
+    type: "PDF",
+    detail: "Laudo e imagens de ressonância magnética da coluna lombar.",
+  },
+];
 
 function Brand() {
   return (
@@ -88,7 +126,38 @@ function Header({ unlocked }: { unlocked: boolean }) {
   );
 }
 
+function ViewSwitcher({ view, onChange }: { view: AppView; onChange: (view: AppView) => void }) {
+  return (
+    <div className="border-b border-border bg-card px-4 py-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+        <span className="hidden text-xs font-bold text-muted-foreground sm:block">Visualização</span>
+        <div className="grid w-full grid-cols-2 rounded-lg bg-muted p-1 sm:ml-auto sm:w-auto sm:min-w-80" role="group" aria-label="Escolher visualização">
+          <Button
+            type="button"
+            variant={view === "patient" ? "default" : "ghost"}
+            className="h-10 shadow-none"
+            aria-pressed={view === "patient"}
+            onClick={() => onChange("patient")}
+          >
+            <UserRound /> Paciente
+          </Button>
+          <Button
+            type="button"
+            variant={view === "doctor" ? "default" : "ghost"}
+            className="h-10 shadow-none"
+            aria-pressed={view === "doctor"}
+            onClick={() => onChange("doctor")}
+          >
+            <Stethoscope /> Médico
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MediLockApp() {
+  const [view, setView] = useState<AppView>("doctor");
   const [unlocked, setUnlocked] = useState(false);
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
@@ -97,6 +166,8 @@ function MediLockApp() {
   const [attention, setAttention] = useState<AttentionState>("pending");
   const [notice, setNotice] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
+  const patientFileInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
 
   const updateToken = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 6);
@@ -131,7 +202,8 @@ function MediLockApp() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header unlocked={unlocked} />
+      {view === "doctor" && <Header unlocked={unlocked} />}
+      <ViewSwitcher view={view} onChange={setView} />
       {notice && (
         <div className="border-b border-success/20 bg-success-soft px-4 py-2 text-center text-sm font-medium text-success" role="status">
           {notice}
@@ -139,17 +211,22 @@ function MediLockApp() {
         </div>
       )}
 
-      <main>{unlocked ? (
-        <UnlockedDashboard
-          attention={attention}
-          setAttention={setAttention}
-          setSourceOpen={setSourceOpen}
-          onUpload={() => fileInput.current?.click()}
-          onRevoke={revoke}
+      <main>{view === "patient" ? (
+        <PatientView
+          onUpload={() => patientFileInput.current?.click()}
+          onCamera={() => cameraInput.current?.click()}
         />
-      ) : (
-        <LockedView token={token} error={error} updateToken={updateToken} unlock={unlock} openQr={() => setQrOpen(true)} />
-      )}</main>
+      ) : unlocked ? (
+          <UnlockedDashboard
+            attention={attention}
+            setAttention={setAttention}
+            setSourceOpen={setSourceOpen}
+            onUpload={() => fileInput.current?.click()}
+            onRevoke={revoke}
+          />
+        ) : (
+          <LockedView token={token} error={error} updateToken={updateToken} unlock={unlock} openQr={() => setQrOpen(true)} />
+        )}</main>
 
       <input
         ref={fileInput}
@@ -159,6 +236,28 @@ function MediLockApp() {
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) setNotice(`${file.name} adicionado à consulta.`);
+          event.target.value = "";
+        }}
+      />
+      <input
+        ref={patientFileInput}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) setNotice(`${file.name} foi salvo em Meus Documentos.`);
+          event.target.value = "";
+        }}
+      />
+      <input
+        ref={cameraInput}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(event) => {
+          if (event.target.files?.[0]) setNotice("Foto salva em Meus Documentos.");
           event.target.value = "";
         }}
       />
@@ -193,6 +292,123 @@ function MediLockApp() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [qrExpanded, setQrExpanded] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<PatientDocument | null>(null);
+
+  const copyToken = async () => {
+    try {
+      await navigator.clipboard.writeText("849201");
+    } catch {
+      // The visual confirmation still helps on browsers that block clipboard access.
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <section className="medilock-enter mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-9">
+      <header className="flex items-center gap-4">
+        <div className="grid size-14 shrink-0 place-items-center rounded-full bg-secondary text-lg font-extrabold text-primary">JS</div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-primary">MediLock · Minha Saúde</p>
+          <h1 className="truncate text-2xl font-extrabold">Olá, João Silva</h1>
+          <p className="mt-1 flex items-start gap-1.5 text-xs leading-5 text-muted-foreground sm:text-sm">
+            <CalendarDays className="mt-0.5 size-4 shrink-0 text-primary" /> Consulta hoje às 14:30 com Dr. Carlos Eduardo
+          </p>
+        </div>
+      </header>
+
+      <article className="mt-7 overflow-hidden rounded-lg bg-token text-token-foreground shadow-lg shadow-success/15">
+        <div className="p-6 text-center sm:p-8">
+          <div className="mx-auto grid size-11 place-items-center rounded-full bg-token-foreground/15"><LockKeyhole className="size-5" /></div>
+          <p className="mt-4 text-sm font-bold">Seu Token de Acesso em Sala</p>
+          <p className="mt-2 text-4xl font-extrabold sm:text-5xl" aria-label="Token 849 201">849-201</p>
+          <Button type="button" variant="secondary" size="lg" className="mt-5 h-12 min-w-44" onClick={copyToken}>
+            {copied ? <ClipboardCheck /> : <Copy />} {copied ? "Token Copiado" : "Copiar Token"}
+          </Button>
+        </div>
+        <div className="border-t border-token-foreground/20 bg-token-deep px-5 py-4">
+          <Button type="button" variant="ghost" className="h-auto w-full justify-between py-2 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => setQrExpanded((open) => !open)} aria-expanded={qrExpanded}>
+            <span className="flex items-center gap-2"><QrCode /> Ou mostre este QR Code ao médico</span>
+            <span className="text-lg" aria-hidden="true">{qrExpanded ? "−" : "+"}</span>
+          </Button>
+          {qrExpanded && (
+            <div className="mx-auto mt-4 grid aspect-square w-44 place-items-center rounded-lg bg-card text-foreground shadow-sm">
+              <QrCode className="size-32" aria-label="QR Code do token 849-201" />
+            </div>
+          )}
+        </div>
+      </article>
+
+      <div className="mt-4 flex items-start gap-3 rounded-lg border border-success/25 bg-success-soft p-4 text-xs leading-5 text-foreground">
+        <ShieldCheck className="mt-0.5 size-5 shrink-0 text-success" />
+        <p>Este código expira ao término da consulta. O médico só acessa seus dados com a sua autorização presencial.</p>
+      </div>
+
+      <section className="mt-9" aria-labelledby="documents-title">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase text-primary">Cofre pessoal</p>
+            <h2 id="documents-title" className="mt-1 text-xl font-extrabold">Meus Documentos e Histórico</h2>
+          </div>
+          <span className="shrink-0 rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">3 arquivos</span>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Button type="button" size="lg" className="col-span-2 h-12 sm:col-span-1" onClick={onUpload}><Upload /> Enviar exame ou receita</Button>
+          <Button type="button" variant="outline" size="lg" className="col-span-2 h-12 sm:col-span-1" onClick={onCamera}><Camera /> Tirar foto</Button>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {patientDocuments.map((document) => (
+            <article key={document.name} className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm sm:items-center">
+              <div className="grid size-11 shrink-0 place-items-center rounded-md bg-secondary text-primary">
+                {document.type === "PDF" ? <FileText className="size-5" /> : <FileImage className="size-5" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold leading-5">{document.name} <span className="font-medium text-muted-foreground">({document.type})</span></h3>
+                <p className="mt-1 text-xs text-muted-foreground">{document.date}</p>
+              </div>
+              <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => setSelectedDocument(document)} aria-label={`Visualizar ${document.name}`} title="Visualizar">
+                <Eye />
+              </Button>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <article className="mt-8 rounded-lg border border-success/25 bg-card p-5 shadow-sm sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="grid size-10 shrink-0 place-items-center rounded-full bg-success-soft text-success"><ShieldCheck className="size-5" /></div>
+          <div>
+            <h2 className="font-extrabold text-success">Privacidade Ativa</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Nenhum médico ou clínica tem acesso aos seus exames neste momento. O acesso só será liberado após a validação do token acima.</p>
+          </div>
+        </div>
+        <div className="mt-5 flex items-start gap-2 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
+          <History className="mt-0.5 size-4 shrink-0" />
+          <p><strong className="text-foreground">Último acesso autorizado:</strong> 15/09/2025 - Hospital São Paulo</p>
+        </div>
+      </article>
+
+      <Dialog open={Boolean(selectedDocument)} onOpenChange={(open) => { if (!open) setSelectedDocument(null); }}>
+        <DialogContent className="max-w-md rounded-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedDocument?.name}</DialogTitle>
+            <DialogDescription>{selectedDocument?.type} · {selectedDocument?.date}</DialogDescription>
+          </DialogHeader>
+          <div className="grid min-h-44 place-items-center rounded-md border border-border bg-muted p-6 text-center">
+            {selectedDocument?.type === "PDF" ? <FileText className="size-12 text-primary" /> : <FileImage className="size-12 text-primary" />}
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">{selectedDocument?.detail}</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 }
 
