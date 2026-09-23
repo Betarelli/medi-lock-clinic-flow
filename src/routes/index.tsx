@@ -129,8 +129,8 @@ function Header({ unlocked }: { unlocked: boolean }) {
 function ViewSwitcher({ view, onChange }: { view: AppView; onChange: (view: AppView) => void }) {
   return (
     <div className="border-b border-border bg-card px-4 py-3">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        <span className="hidden text-xs font-bold text-muted-foreground sm:block">Visualização</span>
+      <div className="mx-auto flex max-w-7xl flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <span className="text-xs font-bold text-muted-foreground">Visualização:</span>
         <div className="grid w-full grid-cols-2 rounded-lg bg-muted p-1 sm:ml-auto sm:w-auto sm:min-w-80" role="group" aria-label="Escolher visualização">
           <Button
             type="button"
