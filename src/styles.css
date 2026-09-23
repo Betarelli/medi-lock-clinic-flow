@@ -165,18 +165,16 @@
     min-width: 320px;
   }
 
-  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
-    outline: 3px solid var(--color-ring);
-    outline-offset: 3px;
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid var(--color-ring) !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 3px var(--color-ring) !important;
   }
-}
-
-.a11y-font-large {
-  font-size: 112.5%;
-}
-
-.a11y-font-larger {
-  font-size: 125%;
 }
 
 .high-contrast {
