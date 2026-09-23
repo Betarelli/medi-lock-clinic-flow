@@ -28,7 +28,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -206,6 +206,7 @@ function ViewSwitcher({ view, onChange }: { view: AppView; onChange: (view: AppV
             variant={view === "patient" ? "default" : "ghost"}
             className="h-10 shadow-none"
             aria-pressed={view === "patient"}
+            aria-label="Mudar para visualização do paciente"
             onClick={() => onChange("patient")}
           >
             <UserRound /> Paciente
@@ -215,6 +216,7 @@ function ViewSwitcher({ view, onChange }: { view: AppView; onChange: (view: AppV
             variant={view === "doctor" ? "default" : "ghost"}
             className="h-10 shadow-none"
             aria-pressed={view === "doctor"}
+            aria-label="Mudar para visualização do médico"
             onClick={() => onChange("doctor")}
           >
             <Stethoscope /> Médico
@@ -244,6 +246,14 @@ function MediLockApp() {
   const fileInput = useRef<HTMLInputElement>(null);
   const patientFileInput = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.fontSize = fontScale === 1 ? "18px" : fontScale === 2 ? "20px" : "16px";
+    return () => {
+      root.style.fontSize = "";
+    };
+  }, [fontScale]);
 
   const updateToken = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 6);
@@ -421,7 +431,7 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
           <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground">Diabetes Tipo 2</span>
           <span className="rounded-full border border-warning/40 bg-warning-soft px-3 py-1.5 text-xs font-bold text-foreground">Alergia a Penicilina</span>
         </div>
-        <Button type="button" variant="ghost" className="mt-4 h-auto justify-start px-0 py-1 text-primary hover:bg-transparent hover:text-clinical" onClick={() => setConditionFormOpen((open) => !open)} aria-expanded={conditionFormOpen}>
+        <Button type="button" variant="ghost" className="mt-4 h-auto min-h-11 justify-start px-0 py-1 text-primary hover:bg-transparent hover:text-clinical" onClick={() => setConditionFormOpen((open) => !open)} aria-expanded={conditionFormOpen} aria-label="Informar nova condição ou alergia">
           <Plus className="size-4" /> Informar nova condição ou alergia
         </Button>
         {conditionFormOpen && (
@@ -562,13 +572,13 @@ function LockedView({ token, error, updateToken, unlock, openQr }: {
             className="h-14 text-center text-xl font-extrabold tracking-[0.22em] focus-visible:ring-2 md:text-xl"
           />
           {error ? <p id="token-error" className="mt-2 text-sm font-medium text-destructive">{error}</p> : <p id="token-help" className="mt-2 text-xs text-muted-foreground">Digite os 6 dígitos exibidos no celular do paciente.</p>}
-          <Button type="submit" size="lg" className="mt-5 h-12 w-full" disabled={token.replace(/\D/g, "").length !== 6}>
+          <Button type="submit" size="lg" className="mt-5 h-12 w-full" disabled={token.replace(/\D/g, "").length !== 6} aria-label="Desbloquear prontuário com token">
             <LockKeyhole /> Desbloquear com Token
           </Button>
         </form>
 
         <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />ou<span className="h-px flex-1 bg-border" /></div>
-        <Button type="button" variant="outline" size="lg" className="h-12 w-full" onClick={openQr}>
+        <Button type="button" variant="outline" size="lg" className="h-12 w-full" onClick={openQr} aria-label="Escanear QR Code do paciente">
           <QrCode /> Escanear QR Code do Paciente
         </Button>
         <div className="mt-7 flex items-start gap-2 border-t border-border pt-5 text-xs leading-5 text-muted-foreground">
