@@ -705,7 +705,7 @@ function ChronicConditionCard({ id, title, source, decision, onDecision, isAlert
           {isAlert ? <AlertTriangle className="size-5" /> : <HeartPulse className="size-5" />}
         </div>
         <div className="min-w-0">
-          <h3 className="font-extrabold leading-6">{title}</h3>
+          <h3 className={`font-extrabold leading-6 ${isAlert ? "text-destructive" : ""}`}>{title}</h3>
           <p className={`mt-2 text-xs font-semibold leading-5 ${isAlert ? "rounded-md bg-destructive/10 px-2 py-1.5 text-destructive" : "text-primary"}`}>{source}</p>
           <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 px-2" onClick={() => speak(`${title}. ${source.replaceAll("[", "").replaceAll("]", "")}`)} aria-label={`Ouvir resumo de ${title}`}>
             <Volume2 /> Ouvir resumo
