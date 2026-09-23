@@ -65,6 +65,9 @@
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-clinical: var(--clinical);
+  --color-token: var(--token);
+  --color-token-deep: var(--token-deep);
+  --color-token-foreground: var(--token-foreground);
 }
 
 :root {
@@ -93,6 +96,9 @@
   --warning: oklch(0.66 0.14 76);
   --warning-soft: oklch(0.96 0.05 83);
   --clinical: oklch(0.36 0.07 203);
+  --token: oklch(0.72 0.2 149);
+  --token-deep: oklch(0.58 0.17 149);
+  --token-foreground: oklch(0.99 0.004 150);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -128,6 +134,9 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.551 0.027 264.364);
+  --token: oklch(0.66 0.17 149);
+  --token-deep: oklch(0.52 0.14 149);
+  --token-foreground: oklch(0.99 0.004 150);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
