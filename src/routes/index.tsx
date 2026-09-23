@@ -25,6 +25,7 @@ import {
   Stethoscope,
   Upload,
   UserRound,
+  Volume2,
   X,
 } from "lucide-react";
 import { FormEvent, useRef, useState } from "react";
@@ -92,6 +93,69 @@ const patientDocuments: PatientDocument[] = [
     detail: "Laudo e imagens de ressonância magnética da coluna lombar.",
   },
 ];
+
+function speak(text: string) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "pt-BR";
+  utterance.rate = 0.9;
+  window.speechSynthesis.speak(utterance);
+}
+
+function AccessibilityBar({
+  fontScale,
+  setFontScale,
+  highContrast,
+  setHighContrast,
+}: {
+  fontScale: number;
+  setFontScale: (scale: number) => void;
+  highContrast: boolean;
+  setHighContrast: (enabled: boolean) => void;
+}) {
+  return (
+    <aside className="border-b border-border bg-foreground px-4 py-2 text-background" aria-label="Barra de acessibilidade">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-end gap-2">
+        <span className="mr-1 hidden text-xs font-bold sm:inline">Acessibilidade</span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-11 min-w-11 border-background/50 bg-foreground text-background hover:bg-background hover:text-foreground"
+          onClick={() => setFontScale(Math.max(0, fontScale - 1))}
+          disabled={fontScale === 0}
+          aria-label="Diminuir tamanho da fonte"
+        >
+          A−
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-11 min-w-11 border-background/50 bg-foreground text-background hover:bg-background hover:text-foreground"
+          onClick={() => setFontScale(Math.min(2, fontScale + 1))}
+          disabled={fontScale === 2}
+          aria-label="Aumentar tamanho da fonte"
+        >
+          A+
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-11 border-background/50 bg-foreground px-3 text-background hover:bg-background hover:text-foreground"
+          onClick={() => setHighContrast(!highContrast)}
+          aria-label={`${highContrast ? "Desativar" : "Ativar"} modo de alto contraste`}
+          aria-pressed={highContrast}
+        >
+          <span className="size-4 rounded-full border border-current bg-token" aria-hidden="true" />
+          Alto Contraste
+        </Button>
+      </div>
+    </aside>
+  );
+}
 
 function Brand() {
   return (
@@ -162,6 +226,8 @@ function ViewSwitcher({ view, onChange }: { view: AppView; onChange: (view: AppV
 }
 
 function MediLockApp() {
+  const [fontScale, setFontScale] = useState(0);
+  const [highContrast, setHighContrast] = useState(false);
   const [view, setView] = useState<AppView>("doctor");
   const [unlocked, setUnlocked] = useState(false);
   const [token, setToken] = useState("");
@@ -212,13 +278,19 @@ function MediLockApp() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className={`min-h-screen bg-background text-foreground ${fontScale === 1 ? "a11y-font-large" : fontScale === 2 ? "a11y-font-larger" : ""} ${highContrast ? "high-contrast" : ""}`}>
+      <AccessibilityBar
+        fontScale={fontScale}
+        setFontScale={setFontScale}
+        highContrast={highContrast}
+        setHighContrast={setHighContrast}
+      />
       {view === "doctor" && <Header unlocked={unlocked} />}
       <ViewSwitcher view={view} onChange={setView} />
       {notice && (
         <div className="border-b border-success/20 bg-success-soft px-4 py-2 text-center text-sm font-medium text-success" role="status">
           {notice}
-          <button className="ml-3 align-middle" aria-label="Fechar aviso" onClick={() => setNotice("")}><X className="size-4" /></button>
+           <Button type="button" variant="ghost" size="icon" className="ml-2 min-h-11 min-w-11 align-middle" aria-label="Fechar aviso" onClick={() => setNotice("")}><X className="size-4" /></Button>
         </div>
       )}
 
@@ -286,7 +358,7 @@ function MediLockApp() {
           <div className="mx-auto grid aspect-square w-56 place-items-center rounded-lg border-2 border-dashed border-primary/40 bg-secondary">
             <QrCode className="size-24 text-primary" aria-hidden="true" />
           </div>
-          <Button size="lg" onClick={simulateQr}>Simular leitura autorizada</Button>
+          <Button size="lg" onClick={simulateQr} aria-label="Simular leitura autorizada do QR Code">Simular leitura autorizada</Button>
         </DialogContent>
       </Dialog>
 
@@ -364,17 +436,25 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
           <div className="mx-auto grid size-11 place-items-center rounded-full bg-token-foreground/15"><LockKeyhole className="size-5" /></div>
           <p className="mt-4 text-sm font-bold">Seu Token de Acesso em Sala</p>
           <p className="mt-2 text-4xl font-extrabold sm:text-5xl" aria-label="Token 849 201">849-201</p>
-          <Button type="button" variant="secondary" size="lg" className="mt-5 h-12 min-w-44" onClick={copyToken}>
+          <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+           <Button type="button" variant="secondary" size="lg" className="h-12 min-w-44" onClick={copyToken} aria-label="Copiar token 849-201">
             {copied ? <ClipboardCheck /> : <Copy />} {copied ? "Token Copiado" : "Copiar Token"}
+          </Button>
+           <Button type="button" variant="secondary" size="lg" className="h-12 min-w-44" onClick={() => speak("Resumo do acesso. Seu token de acesso em sala é 849 201. Ele expira ao término da consulta.")} aria-label="Ouvir resumo do token">
+             <Volume2 /> Ouvir resumo
+           </Button>
+          </div>
+          <Button type="button" variant="ghost" className="mt-3 min-h-11 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => speak("Oito, quatro, nove. Dois, zero, um.")} aria-label="Ouvir dígitos do token 849-201">
+            <Volume2 /> Ouvir dígitos do token
           </Button>
         </div>
         <div className="border-t border-token-foreground/20 bg-token-deep px-5 py-4">
-          <Button type="button" variant="ghost" className="h-auto w-full justify-between py-2 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => setQrExpanded((open) => !open)} aria-expanded={qrExpanded}>
+          <Button type="button" variant="ghost" className="h-auto min-h-11 w-full justify-between py-2 text-token-foreground hover:bg-token-foreground/10 hover:text-token-foreground" onClick={() => setQrExpanded((open) => !open)} aria-expanded={qrExpanded} aria-controls="patient-token-qr" aria-label={`${qrExpanded ? "Ocultar" : "Mostrar"} QR Code do token`}>
             <span className="flex items-center gap-2"><QrCode /> Ou mostre este QR Code para o médico na sala</span>
             <span className="text-lg" aria-hidden="true">{qrExpanded ? "−" : "+"}</span>
           </Button>
           {qrExpanded && (
-            <div className="mx-auto mt-4 grid aspect-square w-44 place-items-center rounded-lg bg-card text-foreground shadow-sm">
+            <div id="patient-token-qr" className="mx-auto mt-4 grid aspect-square w-44 place-items-center rounded-lg bg-card text-foreground shadow-sm">
               <QrCode className="size-32" aria-label="QR Code do token 849-201" />
             </div>
           )}
@@ -396,8 +476,8 @@ function PatientView({ onUpload, onCamera }: { onUpload: () => void; onCamera: (
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <Button type="button" size="lg" className="col-span-2 min-h-12 whitespace-normal px-4 sm:col-span-1" onClick={onUpload}><Upload /> + Enviar Novo Exame ou Receita</Button>
-          <Button type="button" variant="outline" size="lg" className="col-span-2 h-12 sm:col-span-1" onClick={onCamera}><Camera /> Tirar foto</Button>
+          <Button type="button" size="lg" className="col-span-2 min-h-12 whitespace-normal px-4 sm:col-span-1" onClick={onUpload} aria-label="Enviar novo exame ou receita"><Upload /> + Enviar Novo Exame ou Receita</Button>
+          <Button type="button" variant="outline" size="lg" className="col-span-2 h-12 sm:col-span-1" onClick={onCamera} aria-label="Tirar foto de exame ou receita"><Camera /> Tirar foto</Button>
         </div>
 
         <div className="mt-5 space-y-3">
@@ -565,18 +645,21 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
         <article className="rounded-lg border border-warning/35 bg-card p-5 shadow-sm sm:p-6">
           <div className="flex items-center gap-2 text-warning"><AlertTriangle className="size-5" /><h2 className="text-sm font-bold uppercase">Ponto de atenção rastreável</h2></div>
           <p className="mt-5 text-lg font-bold leading-7">Glicemia de jejum elevada <span className="text-warning">(138 mg/dL)</span> com tendência de alta.</p>
-          <button onClick={() => setSourceOpen(true)} className="mt-4 flex items-start gap-2 text-left text-sm font-semibold text-primary underline underline-offset-4 hover:text-clinical">
+          <Button type="button" variant="link" onClick={() => setSourceOpen(true)} className="mt-4 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-sm font-semibold" aria-label="Abrir fonte Laudo Bioquímica de outubro de 2025, página 1">
             <ExternalLink className="mt-0.5 size-4 shrink-0" /><span>[Fonte: Laudo_Bioquimica_Out2025.pdf - Página 1]</span>
-          </button>
+          </Button>
+          <Button type="button" variant="outline" className="mt-4 min-h-11" onClick={() => speak("Ponto de atenção rastreável. Glicemia de jejum elevada, 138 miligramas por decilitro, com tendência de alta. Fonte: Laudo Bioquímica, outubro de 2025, página 1.")} aria-label="Ouvir resumo do ponto de atenção sobre glicemia">
+            <Volume2 /> Ouvir resumo
+          </Button>
           {attention === "pending" ? (
             <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 sm:flex-row">
-              <Button className="min-h-11 flex-1 whitespace-normal" onClick={() => setAttention("accepted")}><Check /> Aceitar / Registrar no Prontuário</Button>
-              <Button variant="outline" className="min-h-11 sm:w-28" onClick={() => setAttention("ignored")}>Ignorar</Button>
+              <Button className="min-h-11 flex-1 whitespace-normal" onClick={() => setAttention("accepted")} aria-label="Aceitar ponto de atenção e registrar no prontuário"><Check /> Aceitar / Registrar no Prontuário</Button>
+              <Button variant="outline" className="min-h-11 sm:w-28" onClick={() => setAttention("ignored")} aria-label="Ignorar ponto de atenção">Ignorar</Button>
             </div>
           ) : (
             <div className={`mt-6 flex items-center justify-between gap-3 rounded-md p-4 ${attention === "accepted" ? "bg-success-soft text-success" : "bg-muted text-muted-foreground"}`} role="status">
               <div className="flex items-center gap-2 text-sm font-bold">{attention === "accepted" ? <CheckCircle2 className="size-5" /> : <X className="size-5" />}{attention === "accepted" ? "Registrado no prontuário" : "Ponto de atenção ignorado"}</div>
-              <Button variant="ghost" size="sm" onClick={() => setAttention("pending")}>Desfazer</Button>
+               <Button variant="ghost" size="sm" className="min-h-11" onClick={() => setAttention("pending")} aria-label="Desfazer decisão sobre o ponto de atenção">Desfazer</Button>
             </div>
           )}
         </article>
@@ -590,8 +673,8 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
       </article>
 
       <div className="mt-7 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
-        <Button variant="outline" size="lg" className="h-12" onClick={onUpload}><FilePlus2 /> Adicionar Laudo da Consulta</Button>
-        <Button variant="destructive" size="lg" className="h-12" onClick={onRevoke}>Encerrar Consulta &amp; Revogar Acesso <ArrowRight /></Button>
+        <Button variant="outline" size="lg" className="h-12" onClick={onUpload} aria-label="Adicionar laudo da consulta"><FilePlus2 /> Adicionar Laudo da Consulta</Button>
+        <Button variant="destructive" size="lg" className="h-12" onClick={onRevoke} aria-label="Encerrar consulta e revogar acesso">Encerrar Consulta &amp; Revogar Acesso <ArrowRight /></Button>
       </div>
     </section>
   );
@@ -614,12 +697,15 @@ function ChronicConditionCard({ id, title, source, decision, onDecision, isAlert
         <div className="min-w-0">
           <h3 className="font-extrabold leading-6">{title}</h3>
           <p className={`mt-2 text-xs font-semibold leading-5 ${isAlert ? "rounded-md bg-warning-soft px-2 py-1.5 text-destructive" : "text-primary"}`}>{source}</p>
+          <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 px-2" onClick={() => speak(`${title}. ${source.replaceAll("[", "").replaceAll("]", "")}`)} aria-label={`Ouvir resumo de ${title}`}>
+            <Volume2 /> Ouvir resumo
+          </Button>
         </div>
       </div>
       {decision === "pending" ? (
         <div className="mt-5 grid grid-cols-2 gap-2 border-t border-border pt-4">
-          <Button type="button" size="sm" onClick={() => onDecision(id, "confirmed")}><Check /> Confirmar</Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => onDecision(id, "discarded")}>Descartar</Button>
+          <Button type="button" size="sm" className="min-h-11" onClick={() => onDecision(id, "confirmed")} aria-label={`Confirmar ${title}`}><Check /> Confirmar</Button>
+          <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => onDecision(id, "discarded")} aria-label={`Descartar ${title}`}>Descartar</Button>
         </div>
       ) : (
         <div className={`mt-5 flex items-center justify-between gap-2 rounded-md p-3 ${decision === "confirmed" ? "bg-success-soft text-success" : "bg-muted text-muted-foreground"}`} role="status">
@@ -627,7 +713,7 @@ function ChronicConditionCard({ id, title, source, decision, onDecision, isAlert
             {decision === "confirmed" ? <CheckCircle2 className="size-4" /> : <X className="size-4" />}
             {decision === "confirmed" ? "Condição confirmada" : "Condição descartada"}
           </span>
-          <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={() => onDecision(id, "pending")}>Desfazer</Button>
+          <Button type="button" variant="ghost" size="sm" className="min-h-11 px-2" onClick={() => onDecision(id, "pending")} aria-label={`Desfazer decisão sobre ${title}`}>Desfazer</Button>
         </div>
       )}
     </article>
