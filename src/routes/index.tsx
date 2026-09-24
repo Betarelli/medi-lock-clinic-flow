@@ -304,15 +304,16 @@ function formatCpf(value: string) {
 function PatientLoginScreen({ onAccess }: { onAccess: () => void }) {
   const [phone, setPhone] = useState("");
   const [cpf, setCpf] = useState("");
-  const [loginError, setLoginError] = useState("");
+
+  const accessDemo = () => {
+    if (!phone) setPhone("(11) 99999-9999");
+    if (!cpf) setCpf("123.456.789-00");
+    onAccess();
+  };
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (phone.replace(/\D/g, "").length !== 11 || cpf.replace(/\D/g, "").length !== 11) {
-      setLoginError("Confira o celular e o CPF para continuar.");
-      return;
-    }
-    onAccess();
+    accessDemo();
   };
 
   return (
@@ -340,13 +341,10 @@ function PatientLoginScreen({ onAccess }: { onAccess: () => void }) {
               inputMode="tel"
               autoComplete="tel-national"
               value={phone}
-              onChange={(event) => { setPhone(formatPhone(event.target.value)); setLoginError(""); }}
+              onChange={(event) => setPhone(formatPhone(event.target.value))}
               placeholder="(11) 99999-9999"
               maxLength={15}
               className="h-12"
-              aria-invalid={Boolean(loginError)}
-              aria-describedby={loginError ? "patient-login-error" : undefined}
-              required
             />
           </div>
           <div className="mt-5">
@@ -356,18 +354,17 @@ function PatientLoginScreen({ onAccess }: { onAccess: () => void }) {
               inputMode="numeric"
               autoComplete="off"
               value={cpf}
-              onChange={(event) => { setCpf(formatCpf(event.target.value)); setLoginError(""); }}
+              onChange={(event) => setCpf(formatCpf(event.target.value))}
               placeholder="000.000.000-00"
               maxLength={14}
               className="h-12"
-              aria-invalid={Boolean(loginError)}
-              aria-describedby={loginError ? "patient-login-error" : undefined}
-              required
             />
           </div>
-          {loginError && <p id="patient-login-error" className="mt-3 text-sm font-semibold text-destructive" role="alert">{loginError}</p>}
           <Button type="submit" size="lg" className="mt-6 h-12 w-full" aria-label="Entrar no meu cofre de saúde">
             <LockKeyhole /> Entrar no Meu Cofre de Saúde
+          </Button>
+          <Button type="button" variant="ghost" className="mt-2 min-h-11 w-full text-primary" onClick={accessDemo} aria-label="Acessar diretamente o modo de demonstração">
+            Acessar Direto (Modo Demo)
           </Button>
           <div className="mt-5 flex items-start gap-2 border-t border-border pt-5 text-xs leading-5 text-muted-foreground">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
@@ -895,13 +892,6 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
           )}
         </article>
       </div>
-
-      <article className="mt-5 rounded-lg border border-border bg-muted p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-md bg-background text-muted-foreground"><ShieldCheck className="size-5" /></div>
-          <div className="min-w-0"><p className="text-xs font-bold uppercase text-muted-foreground">Guardrail clínico</p><h2 className="mt-1 text-lg font-extrabold">Sugestão Descartada: Prescrição de Estatina.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground"><strong className="text-foreground">Bloqueado:</strong> Nenhuma evidência de perfil lipídico recente no histórico enviado.</p></div>
-        </div>
-      </article>
 
       <div className="mt-7 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
         <Button variant="outline" size="lg" className="h-12" onClick={onUpload} aria-label="Adicionar laudo da consulta"><FilePlus2 /> Adicionar Laudo da Consulta</Button>
