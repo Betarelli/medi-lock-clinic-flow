@@ -3,6 +3,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  BarChart3,
   CalendarDays,
   Camera,
   Check,
@@ -16,6 +17,8 @@ import {
   FileImage,
   FilePlus2,
   FileText,
+  FlaskConical,
+  Gauge,
   HeartPulse,
   History,
   LockKeyhole,
@@ -25,6 +28,7 @@ import {
   ShieldCheck,
   Square,
   Stethoscope,
+  TestTube2,
   Upload,
   UserRound,
   UsersRound,
@@ -870,27 +874,46 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
           </div>
         </article>
 
-        <article className={`rounded-lg border p-5 shadow-sm transition-all sm:p-6 ${attention === "accepted" ? "border-success/45 bg-success-soft/40" : attention === "ignored" ? "border-border bg-muted opacity-60" : "border-warning/35 bg-card"}`}>
-          <div className="flex items-center gap-2 text-warning"><AlertTriangle className="size-5" /><h2 className="text-sm font-bold uppercase">Ponto de atenção rastreável</h2></div>
-          <p className="mt-5 text-lg font-bold leading-7">Glicemia de jejum elevada <span className="text-warning">(138 mg/dL)</span> com tendência de alta.</p>
-          <Button type="button" variant="link" onClick={() => setSourceOpen(true)} className="mt-4 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-sm font-semibold" aria-label="Abrir fonte Laudo Bioquímica de outubro de 2025, página 1">
-            <ExternalLink className="mt-0.5 size-4 shrink-0" /><span>[Fonte: Laudo_Bioquimica_Out2025.pdf - Página 1]</span>
-          </Button>
-          <Button type="button" variant="outline" className="mt-4 min-h-11" onClick={() => toggleSpeech("attention-glucose", "Ponto de atenção rastreável. Glicemia de jejum elevada, 138 miligramas por decilitro, com tendência de alta. Fonte: Laudo Bioquímica, outubro de 2025, página 1.")} aria-label={`${speakingId === "attention-glucose" ? "Parar" : "Ouvir"} resumo do ponto de atenção sobre glicemia`} aria-pressed={speakingId === "attention-glucose"}>
-            {speakingId === "attention-glucose" ? <Square /> : <Volume2 />} {speakingId === "attention-glucose" ? "Parar leitura" : "Ouvir resumo"}
-          </Button>
-          {attention === "pending" ? (
-            <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 sm:flex-row">
-              <Button className="min-h-11 flex-1 whitespace-normal" onClick={() => setAttention("accepted")} aria-label="Aceitar ponto de atenção e registrar no prontuário"><Check /> Aceitar</Button>
-              <Button variant="outline" className="min-h-11 sm:w-28" onClick={() => setAttention("ignored")} aria-label="Ignorar ponto de atenção">Ignorar</Button>
+        <div className="min-w-0 space-y-5">
+          <article className={`rounded-lg border p-5 shadow-sm transition-all sm:p-6 ${attention === "accepted" ? "border-success/45 bg-success-soft/40" : attention === "ignored" ? "border-border bg-muted opacity-60" : "border-warning/35 bg-card"}`}>
+            <div className="flex items-center gap-2 text-warning"><AlertTriangle className="size-5" /><h2 className="text-sm font-bold uppercase">Ponto de atenção rastreável</h2></div>
+            <p className="mt-5 text-lg font-bold leading-7">Glicemia de jejum elevada <span className="text-warning">(138 mg/dL)</span> com tendência de alta.</p>
+            <Button type="button" variant="link" onClick={() => setSourceOpen(true)} className="mt-4 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-sm font-semibold" aria-label="Abrir fonte Laudo Bioquímica de outubro de 2025, página 1">
+              <ExternalLink className="mt-0.5 size-4 shrink-0" /><span>[Fonte: Laudo_Bioquimica_Out2025.pdf - Página 1]</span>
+            </Button>
+            <Button type="button" variant="outline" className="mt-4 min-h-11" onClick={() => toggleSpeech("attention-glucose", "Ponto de atenção rastreável. Glicemia de jejum elevada, 138 miligramas por decilitro, com tendência de alta. Fonte: Laudo Bioquímica, outubro de 2025, página 1.")} aria-label={`${speakingId === "attention-glucose" ? "Parar" : "Ouvir"} resumo do ponto de atenção sobre glicemia`} aria-pressed={speakingId === "attention-glucose"}>
+              {speakingId === "attention-glucose" ? <Square /> : <Volume2 />} {speakingId === "attention-glucose" ? "Parar leitura" : "Ouvir resumo"}
+            </Button>
+            {attention === "pending" ? (
+              <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 sm:flex-row">
+                <Button className="min-h-11 flex-1 whitespace-normal" onClick={() => setAttention("accepted")} aria-label="Aceitar ponto de atenção e registrar no prontuário"><Check /> Aceitar</Button>
+                <Button variant="outline" className="min-h-11 sm:w-28" onClick={() => setAttention("ignored")} aria-label="Ignorar ponto de atenção">Ignorar</Button>
+              </div>
+            ) : (
+              <div className={`mt-6 flex items-center justify-between gap-3 rounded-md p-4 ${attention === "accepted" ? "border border-success/30 bg-success-soft text-success" : "border border-border bg-card text-muted-foreground"}`} role="status">
+                <div className="flex items-center gap-2 text-sm font-bold">{attention === "accepted" ? <CheckCircle2 className="size-5" /> : <X className="size-5" />}{attention === "accepted" ? "Validado pelo Dr. Carlos Eduardo" : "Descartado pelo profissional"}</div>
+                 <Button variant="ghost" size="sm" className="min-h-11" onClick={() => setAttention("pending")} aria-label="Desfazer decisão sobre o ponto de atenção">Desfazer</Button>
+              </div>
+            )}
+          </article>
+
+          <section className="rounded-lg border border-border bg-card p-5 shadow-sm sm:p-6" aria-labelledby="routine-exams-title">
+            <div className="flex items-start gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-md bg-secondary text-primary"><BarChart3 className="size-5" aria-hidden="true" /></div>
+              <div className="min-w-0">
+                <h2 id="routine-exams-title" className="text-sm font-extrabold uppercase leading-5">Exames de Rotina (Último Laudo Extraído)</h2>
+                <p className="mt-1 break-words text-xs font-semibold leading-5 text-primary">[Fonte: Laudo_Bioquimica_Out2025.pdf - Pág. 1 e 2]</p>
+              </div>
             </div>
-          ) : (
-            <div className={`mt-6 flex items-center justify-between gap-3 rounded-md p-4 ${attention === "accepted" ? "border border-success/30 bg-success-soft text-success" : "border border-border bg-card text-muted-foreground"}`} role="status">
-              <div className="flex items-center gap-2 text-sm font-bold">{attention === "accepted" ? <CheckCircle2 className="size-5" /> : <X className="size-5" />}{attention === "accepted" ? "Validado pelo Dr. Carlos Eduardo" : "Descartado pelo profissional"}</div>
-               <Button variant="ghost" size="sm" className="min-h-11" onClick={() => setAttention("pending")} aria-label="Desfazer decisão sobre o ponto de atenção">Desfazer</Button>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <RoutineExam icon={FlaskConical} name="Hemoglobina Glicada (HbA1c)" value="7,4%" reference="Ref: até 5,7%" status="Elevada / Ponto de Atenção" attention />
+              <RoutineExam icon={HeartPulse} name="Colesterol Total" value="182 mg/dL" reference="Ref: < 190 mg/dL" status="Normal" />
+              <RoutineExam icon={Gauge} name="Triglicerídeos" value="178 mg/dL" reference="Ref: < 150 mg/dL" status="Levemente Elevado" attention />
+              <RoutineExam icon={TestTube2} name="Creatinina Sérica" value="0,95 mg/dL" reference="Ref: 0,70 a 1,20 mg/dL" status="Função Renal Normal" />
+              <RoutineExam icon={Activity} name="Potássio (K+)" value="4,4 mEq/L" reference="Ref: 3,5 a 5,1 mEq/L" status="Normal" />
             </div>
-          )}
-        </article>
+          </section>
+        </div>
       </div>
 
       <div className="mt-7 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
@@ -898,6 +921,33 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
         <Button variant="destructive" size="lg" className="h-12" onClick={onRevoke} aria-label="Encerrar consulta e revogar acesso">Encerrar Consulta &amp; Revogar Acesso <ArrowRight /></Button>
       </div>
     </section>
+  );
+}
+
+function RoutineExam({ icon: Icon, name, value, reference, status, attention = false }: {
+  icon: typeof Activity;
+  name: string;
+  value: string;
+  reference: string;
+  status: string;
+  attention?: boolean;
+}) {
+  return (
+    <article className="min-w-0 rounded-md border border-border bg-background p-4">
+      <div className="flex items-start gap-3">
+        <div className={`grid size-9 shrink-0 place-items-center rounded-md ${attention ? "bg-warning-soft text-warning" : "bg-success-soft text-success"}`}>
+          <Icon className="size-4" aria-hidden="true" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold leading-5">{name}</h3>
+          <p className="mt-1 text-base font-extrabold">{value}</p>
+          <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{reference}</p>
+        </div>
+      </div>
+      <span className={`mt-3 inline-flex max-w-full rounded-full px-2.5 py-1 text-xs font-bold leading-5 ${attention ? "bg-warning-soft text-warning" : "bg-success-soft text-success"}`}>
+        {status}
+      </span>
+    </article>
   );
 }
 
