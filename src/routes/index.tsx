@@ -72,6 +72,54 @@ type AppView = "doctor" | "patient";
 type ConditionId = "hypertension" | "diabetes" | "penicillin";
 type ConditionDecision = "pending" | "confirmed" | "discarded";
 type ConditionDecisions = Record<ConditionId, ConditionDecision>;
+type ClinicalSourceId = "losartan" | "glucose" | "biochemistry-glucose" | "biochemistry-routine";
+
+type ClinicalSource = {
+  title: string;
+  description: string;
+  section: string;
+  highlight: string;
+  reference: string;
+  supportingResults?: string[];
+};
+
+const clinicalSources: Record<ClinicalSourceId, ClinicalSource> = {
+  losartan: {
+    title: "Receita_Losartana_Jan2026.pdf • Página 1",
+    description: "Receita médica original enviada pelo paciente",
+    section: "Prescrição de uso contínuo",
+    highlight: "Losartana Potássica 50 mg — tomar 1 comprimido pela manhã e 1 à noite.",
+    reference: "Indicação clínica registrada: Hipertensão Arterial Sistêmica",
+  },
+  glucose: {
+    title: "Laudo_Glicemia_Out2025.pdf • Página 1",
+    description: "Laudo laboratorial original enviado pelo paciente",
+    section: "Bioquímica Clínica",
+    highlight: "Glicemia de Jejum: 138 mg/dL",
+    reference: "Referência: 70 a 99 mg/dL",
+  },
+  "biochemistry-glucose": {
+    title: "Laudo_Bioquimica_Out2025.pdf • Página 1",
+    description: "Laudo laboratorial original enviado pelo paciente",
+    section: "Bioquímica Clínica",
+    highlight: "Glicemia de Jejum: 138 mg/dL",
+    reference: "Referência: 70 a 99 mg/dL",
+    supportingResults: ["Método: Enzimático colorimétrico", "Resultado anterior: 126 mg/dL"],
+  },
+  "biochemistry-routine": {
+    title: "Laudo_Bioquimica_Out2025.pdf • Páginas 1 e 2",
+    description: "Laudo laboratorial original enviado pelo paciente",
+    section: "Exames de Rotina",
+    highlight: "Hemoglobina Glicada (HbA1c): 7,4%",
+    reference: "Referência: até 5,7%",
+    supportingResults: [
+      "Colesterol Total: 182 mg/dL",
+      "Triglicerídeos: 178 mg/dL",
+      "Creatinina Sérica: 0,95 mg/dL",
+      "Potássio (K+): 4,4 mEq/L",
+    ],
+  },
+};
 
 type PatientDocument = {
   name: string;
@@ -389,7 +437,7 @@ function MediLockApp() {
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
-  const [sourceOpen, setSourceOpen] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<ClinicalSourceId | null>(null);
   const [creditsOpen, setCreditsOpen] = useState(false);
   const [attention, setAttention] = useState<AttentionState>("pending");
   const [conditionDecisions, setConditionDecisions] = useState<ConditionDecisions>({
@@ -485,7 +533,7 @@ function MediLockApp() {
             setConditionDecision={(condition, decision) => {
               setConditionDecisions((current) => ({ ...current, [condition]: decision }));
             }}
-            setSourceOpen={setSourceOpen}
+            onOpenSource={setSelectedSource}
             onUpload={() => fileInput.current?.click()}
             onRevoke={revoke}
             speakingId={speakingId}
@@ -542,31 +590,7 @@ function MediLockApp() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={sourceOpen} onOpenChange={setSourceOpen}>
-        <DialogContent className="max-w-xl rounded-lg">
-          <DialogHeader>
-            <DialogTitle>Laudo_Bioquimica_Out2025.pdf</DialogTitle>
-            <DialogDescription>Página 1 · Pré-visualização do resultado laboratorial enviado pelo paciente</DialogDescription>
-          </DialogHeader>
-          <div className="rounded-md border border-border bg-muted p-5 text-sm leading-7" aria-label="Pré-visualização do laudo laboratorial">
-            <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
-              <div>
-                <p className="font-extrabold">Bioquímica Clínica</p>
-                <p className="text-xs text-muted-foreground">Paciente: João Silva · Coleta: 18/10/2025</p>
-              </div>
-              <FileText className="size-6 shrink-0 text-primary" aria-hidden="true" />
-            </div>
-            <div className="mt-4 rounded-md border border-warning/45 bg-warning-soft px-4 py-3 text-foreground" role="note">
-              <p className="font-extrabold">Glicemia de Jejum: 138 mg/dL <span className="font-semibold">(Referência: 70 a 99 mg/dL)</span></p>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-              <span className="text-muted-foreground">Método</span><span>Enzimático colorimétrico</span>
-              <span className="text-muted-foreground">Resultado anterior</span><span>126 mg/dL</span>
-            </div>
-          </div>
-          <Button type="button" variant="outline" className="w-full" onClick={() => setSourceOpen(false)} aria-label="Fechar pré-visualização do laudo">Fechar</Button>
-        </DialogContent>
-      </Dialog>
+      <ClinicalDocumentViewer sourceId={selectedSource} onClose={() => setSelectedSource(null)} />
         </>
       )}
 
@@ -804,12 +828,12 @@ function LockedView({ token, error, updateToken, unlock, openQr }: {
   );
 }
 
-function UnlockedDashboard({ attention, setAttention, conditionDecisions, setConditionDecision, setSourceOpen, onUpload, onRevoke, speakingId, toggleSpeech }: {
+function UnlockedDashboard({ attention, setAttention, conditionDecisions, setConditionDecision, onOpenSource, onUpload, onRevoke, speakingId, toggleSpeech }: {
   attention: AttentionState;
   setAttention: (state: AttentionState) => void;
   conditionDecisions: ConditionDecisions;
   setConditionDecision: (condition: ConditionId, decision: ConditionDecision) => void;
-  setSourceOpen: (open: boolean) => void;
+  onOpenSource: (source: ClinicalSourceId) => void;
   onUpload: () => void;
   onRevoke: () => void;
   speakingId: string | null;
@@ -835,6 +859,8 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
             id="hypertension"
             title="Hipertensão Arterial Sistêmica"
             source="[Fonte: Receita_Losartana_Jan2026.pdf - Pág. 1]"
+            sourceId="losartan"
+            onOpenSource={onOpenSource}
             decision={conditionDecisions.hypertension}
             onDecision={setConditionDecision}
             speakingId={speakingId}
@@ -844,6 +870,8 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
             id="diabetes"
             title="Diabetes Tipo 2"
             source="[Fonte: Laudo_Glicemia_Out2025.pdf - Pág. 1]"
+            sourceId="glucose"
+            onOpenSource={onOpenSource}
             decision={conditionDecisions.diabetes}
             onDecision={setConditionDecision}
             speakingId={speakingId}
@@ -878,7 +906,7 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
           <article className={`rounded-lg border p-5 shadow-sm transition-all sm:p-6 ${attention === "accepted" ? "border-success/45 bg-success-soft/40" : attention === "ignored" ? "border-border bg-muted opacity-60" : "border-warning/35 bg-card"}`}>
             <div className="flex items-center gap-2 text-warning"><AlertTriangle className="size-5" /><h2 className="text-sm font-bold uppercase">Ponto de atenção rastreável</h2></div>
             <p className="mt-5 text-lg font-bold leading-7">Glicemia de jejum elevada <span className="text-warning">(138 mg/dL)</span> com tendência de alta.</p>
-            <Button type="button" variant="link" onClick={() => setSourceOpen(true)} className="mt-4 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-sm font-semibold" aria-label="Abrir fonte Laudo Bioquímica de outubro de 2025, página 1">
+            <Button type="button" variant="link" onClick={() => onOpenSource("biochemistry-glucose")} className="mt-4 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-sm font-semibold underline-offset-4 hover:underline" aria-label="Abrir documento original Laudo Bioquímica de outubro de 2025, página 1">
               <ExternalLink className="mt-0.5 size-4 shrink-0" /><span>[Fonte: Laudo_Bioquimica_Out2025.pdf - Página 1]</span>
             </Button>
             <Button type="button" variant="outline" className="mt-4 min-h-11" onClick={() => toggleSpeech("attention-glucose", "Ponto de atenção rastreável. Glicemia de jejum elevada, 138 miligramas por decilitro, com tendência de alta. Fonte: Laudo Bioquímica, outubro de 2025, página 1.")} aria-label={`${speakingId === "attention-glucose" ? "Parar" : "Ouvir"} resumo do ponto de atenção sobre glicemia`} aria-pressed={speakingId === "attention-glucose"}>
@@ -902,7 +930,10 @@ function UnlockedDashboard({ attention, setAttention, conditionDecisions, setCon
               <div className="grid size-10 shrink-0 place-items-center rounded-md bg-secondary text-primary"><BarChart3 className="size-5" aria-hidden="true" /></div>
               <div className="min-w-0">
                 <h2 id="routine-exams-title" className="text-sm font-extrabold uppercase leading-5">Exames de Rotina (Último Laudo Extraído)</h2>
-                <p className="mt-1 break-words text-xs font-semibold leading-5 text-primary">[Fonte: Laudo_Bioquimica_Out2025.pdf - Pág. 1 e 2]</p>
+                <Button type="button" variant="link" onClick={() => onOpenSource("biochemistry-routine")} className="mt-1 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-xs font-semibold leading-5 underline-offset-4 hover:underline" aria-label="Abrir documento original Laudo Bioquímica de outubro de 2025, páginas 1 e 2">
+                  <ExternalLink className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <span>[Fonte: Laudo_Bioquimica_Out2025.pdf - Pág. 1 e 2]</span>
+                </Button>
               </div>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -951,10 +982,12 @@ function RoutineExam({ icon: Icon, name, value, reference, status, attention = f
   );
 }
 
-function ChronicConditionCard({ id, title, source, decision, onDecision, speakingId, toggleSpeech, isAlert = false }: {
+function ChronicConditionCard({ id, title, source, sourceId, onOpenSource, decision, onDecision, speakingId, toggleSpeech, isAlert = false }: {
   id: ConditionId;
   title: string;
   source: string;
+  sourceId?: ClinicalSourceId;
+  onOpenSource?: (source: ClinicalSourceId) => void;
   decision: ConditionDecision;
   onDecision: (condition: ConditionId, decision: ConditionDecision) => void;
   speakingId: string | null;
@@ -969,7 +1002,14 @@ function ChronicConditionCard({ id, title, source, decision, onDecision, speakin
         </div>
         <div className="min-w-0">
           <h3 className={`font-extrabold leading-6 ${isAlert ? "text-destructive" : ""}`}>{title}</h3>
-          <p className={`mt-2 text-xs font-semibold leading-5 ${isAlert ? "rounded-md bg-destructive/10 px-2 py-1.5 text-destructive" : "text-primary"}`}>{source}</p>
+          {sourceId && onOpenSource ? (
+            <Button type="button" variant="link" onClick={() => onOpenSource(sourceId)} className="mt-2 h-auto min-h-11 max-w-full items-start whitespace-normal px-0 text-left text-xs font-semibold leading-5 underline-offset-4 hover:underline" aria-label={`Abrir documento original de ${title}`}>
+              <ExternalLink className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span>{source}</span>
+            </Button>
+          ) : (
+            <p className={`mt-2 text-xs font-semibold leading-5 ${isAlert ? "rounded-md bg-destructive/10 px-2 py-1.5 text-destructive" : "text-primary"}`}>{source}</p>
+          )}
           <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 px-2" onClick={() => toggleSpeech(`condition-${id}`, `${title}. ${source.replaceAll("[", "").replaceAll("]", "")}`)} aria-label={`${speakingId === `condition-${id}` ? "Parar" : "Ouvir"} resumo de ${title}`} aria-pressed={speakingId === `condition-${id}`}>
             {speakingId === `condition-${id}` ? <Square /> : <Volume2 />} {speakingId === `condition-${id}` ? "Parar leitura" : "Ouvir resumo"}
           </Button>
@@ -990,5 +1030,63 @@ function ChronicConditionCard({ id, title, source, decision, onDecision, speakin
         </div>
       )}
     </article>
+  );
+}
+
+function ClinicalDocumentViewer({ sourceId, onClose }: { sourceId: ClinicalSourceId | null; onClose: () => void }) {
+  const source = sourceId ? clinicalSources[sourceId] : null;
+
+  return (
+    <Dialog open={Boolean(source)} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto rounded-lg p-4 sm:p-6">
+        {source && (
+          <>
+            <div className="flex flex-col-reverse gap-3 border-b border-border pb-4 pr-7 sm:flex-row sm:items-start sm:justify-between">
+              <DialogHeader className="min-w-0 text-left">
+                <DialogTitle className="break-words pr-1 leading-6">{source.title}</DialogTitle>
+                <DialogDescription>{source.description}</DialogDescription>
+              </DialogHeader>
+              <Button type="button" variant="outline" size="sm" className="min-h-11 shrink-0 self-end sm:self-start" onClick={onClose} aria-label="Fechar visualizador de documento">
+                <X className="size-4" aria-hidden="true" /> Fechar visualizador (ESC)
+              </Button>
+            </div>
+
+            <div className="rounded-md bg-muted p-3 sm:p-5" aria-label={`Visualização de ${source.title}`}>
+              <article className="mx-auto min-h-96 max-w-xl border border-border bg-card p-5 text-foreground shadow-lg sm:p-8">
+                <header className="flex items-start justify-between gap-4 border-b-2 border-primary pb-5">
+                  <div>
+                    <p className="text-xs font-extrabold uppercase text-primary">Laboratório MediAnálise</p>
+                    <h3 className="mt-1 text-xl font-extrabold">{source.section}</h3>
+                    <p className="mt-2 text-xs text-muted-foreground">Paciente: João Silva · Coleta: 18/10/2025</p>
+                  </div>
+                  <FileText className="size-8 shrink-0 text-primary" aria-hidden="true" />
+                </header>
+
+                <div className="mt-8">
+                  <p className="text-xs font-bold uppercase text-muted-foreground">Trecho vinculado ao prontuário</p>
+                  <div className="mt-3 border-l-4 border-warning bg-warning-soft px-4 py-4" role="note" aria-label="Trecho destacado do documento">
+                    <p className="font-extrabold leading-7">{source.highlight}</p>
+                    <p className="mt-1 text-sm font-semibold">{source.reference}</p>
+                  </div>
+                </div>
+
+                {source.supportingResults && (
+                  <div className="mt-7 border-t border-border pt-5">
+                    <p className="text-xs font-bold uppercase text-muted-foreground">Demais resultados no documento</p>
+                    <ul className="mt-3 divide-y divide-border text-sm">
+                      {source.supportingResults.map((result) => <li key={result} className="py-2.5">{result}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                <footer className="mt-10 border-t border-border pt-4 text-xs text-muted-foreground">
+                  Documento original preservado no cofre MediLock · Visualização somente leitura
+                </footer>
+              </article>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
